@@ -9,8 +9,15 @@ export interface Field {
   value: string | string[];
 }
 
+export enum WebsiteFTPProtocol {
+  FTP = 'FTP',
+  SFTP = 'SFTP'
+}
+
 export interface WebsiteFTP {
+  protocol: WebsiteFTPProtocol;
   host: string;
+  port: number;
   user: string;
   password: string;
   directory: string;
