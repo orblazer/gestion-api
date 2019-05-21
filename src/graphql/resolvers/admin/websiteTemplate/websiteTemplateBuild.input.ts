@@ -5,12 +5,14 @@ import { WebsiteTemplatePackager } from '../../../../database/WebsiteTemplate'
 
 @TypeGQL.InputType()
 export default class WebsiteTemplateBuildInput {
-  @TypeGQL.Field((): ReturnTypeFuncValue => WebsiteTemplatePackager)
-  public packager: WebsiteTemplatePackager
+  @TypeGQL.Field((): ReturnTypeFuncValue => WebsiteTemplatePackager, {
+    defaultValue: WebsiteTemplatePackager.NPM
+  })
+  public packager: WebsiteTemplatePackager = WebsiteTemplatePackager.NPM
 
-  @TypeGQL.Field()
-  public script: string
+  @TypeGQL.Field({ defaultValue: 'build' })
+  public script: string = 'build'
 
-  @TypeGQL.Field()
-  public directory: string
+  @TypeGQL.Field({ defaultValue: 'dist/' })
+  public directory: string = 'dist/'
 }
