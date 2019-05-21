@@ -6,6 +6,7 @@ import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
 import { WebsiteTemplateModule } from '../../../../database/WebsiteTemplate'
 import { Lang } from '../../textLocalized'
 import WebsiteTemplateFieldInput from './websiteTemplateField.input'
+import WebsiteTemplateBuildInput from './websiteTemplateBuild.input'
 
 @TypeGQL.InputType()
 export default class WebsiteTemplateInputCreate {
@@ -35,4 +36,7 @@ export default class WebsiteTemplateInputCreate {
 
   @TypeGQL.Field((): ReturnTypeFuncValue => GraphQLUpload)
   public preview: GraphQLScalarType
+
+  @TypeGQL.Field((): ReturnTypeFuncValue => WebsiteTemplateBuildInput)
+  public build: WebsiteTemplateBuildInput
 }

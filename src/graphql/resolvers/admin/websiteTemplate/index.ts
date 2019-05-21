@@ -8,6 +8,7 @@ import UploadedFile from '../../uploadedFile.type'
 import UploadedImage from '../../uploadedImage.type'
 import User from '../user'
 import WebsiteTemplateField from './websiteTemplateField.type'
+import WebsiteTemplateBuild from './websiteTemplateBuild.type'
 
 TypeGQL.registerEnumType(WebsiteTemplateModule, {
   name: 'WebsiteTemplateModule'
@@ -50,4 +51,7 @@ export default class WebsiteTemplate {
 
   @TypeGQL.Field((): ReturnTypeFuncValue => UploadedImage)
   public preview: UploadedImage
+
+  @TypeGQL.Field((): ReturnTypeFuncValue => WebsiteTemplateBuild)
+  public build: WebsiteTemplateBuild
 }

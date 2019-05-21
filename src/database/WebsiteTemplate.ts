@@ -25,6 +25,17 @@ export enum WebsiteTemplateModule {
   REST_MENU = 'REST_MENU'
 }
 
+export enum WebsiteTemplatePackager {
+  YARN = 'YARN',
+  NPM = 'NPM'
+}
+
+export interface WebsiteTemplateBuild {
+  packager: WebsiteTemplatePackager;
+  script: string;
+  directory: string;
+}
+
 export class WebsiteTemplate extends Typegoose {
   @prop({ required: true })
   public name: string
@@ -58,6 +69,9 @@ export class WebsiteTemplate extends Typegoose {
 
   @prop()
   public preview: Lib.UploadImageResult
+
+  @prop({ default: null })
+  public build: WebsiteTemplateBuild = null
 }
 
 export type Instance = InstanceType<WebsiteTemplate>
