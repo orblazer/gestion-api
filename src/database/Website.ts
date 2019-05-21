@@ -1,12 +1,13 @@
 import { Typegoose, prop, arrayProp, Ref, InstanceType } from 'typegoose'
 import mongoose from 'mongoose'
 import isURL from 'validator/lib/isURL'
+import { FieldValue } from '../graphql/resolvers/scalars/FieldValue'
 import { User } from './User'
 import { WebsiteTemplate, WebsiteTemplateModule } from './WebsiteTemplate'
 
 export interface Field {
   name: string;
-  value: string | string[];
+  value: FieldValue;
 }
 
 export enum WebsiteFTPProtocol {
@@ -25,13 +26,13 @@ export interface WebsiteFTP {
 
 export class Website extends Typegoose {
   @prop({ default: null })
-  public ftp: WebsiteFTP = null;
+  public ftp: WebsiteFTP = null
 
   @prop({ required: true })
-  public name: string;
+  public name: string
 
   @prop({ default: '' })
-  public description: string;
+  public description: string
 
   @prop({
     required: true,
@@ -41,34 +42,34 @@ export class Website extends Typegoose {
       message: '{VALUE} is not a valid url'
     }
   })
-  public url: string;
+  public url: string
 
   @prop({ default: false })
-  public enabled: boolean = false;
+  public enabled: boolean = false
 
   @prop({ default: Date.now })
-  public createdAt: Date = new Date();
+  public createdAt: Date = new Date()
 
   @prop({ ref: User })
-  public author_id: Ref<User>;
+  public author_id: Ref<User>
 
   @arrayProp({ itemsRef: User })
-  public users: Ref<User>[];
+  public users: Ref<User>[]
 
   @prop({ ref: WebsiteTemplate })
-  public template: Ref<WebsiteTemplate>;
+  public template: Ref<WebsiteTemplate>
 
   @prop({ _id: false })
-  public enabledModules: WebsiteTemplateModule[];
+  public enabledModules: WebsiteTemplateModule[]
 
   @prop({ _id: false })
-  public fields: Field[];
+  public fields: Field[]
 
   @prop()
-  public directory: string;
+  public directory: string
 }
 
-export type Instance = InstanceType<Website>;
+export type Instance = InstanceType<Website>
 
 export default new Website().getModelForClass(Website, {
   existingMongoose: mongoose,
