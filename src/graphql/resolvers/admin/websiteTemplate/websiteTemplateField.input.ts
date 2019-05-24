@@ -3,6 +3,7 @@ import * as TypeGQL from 'type-graphql'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
 import { Lang } from '../../textLocalized'
 import { JSONScalar, JSONType } from '../../scalars/JSON'
+import { FieldValue, FieldValueScalar } from '../../scalars/FieldValue'
 import WTFOptionInput from './WTFOption.input'
 
 @TypeGQL.InputType()
@@ -24,6 +25,11 @@ export default class WebsiteTemplateFieldInput {
 
   @TypeGQL.Field({ nullable: true })
   public placeholder?: string
+
+  @TypeGQL.Field((): ReturnTypeFuncValue => FieldValueScalar, {
+    nullable: true
+  })
+  private defaultValue?: FieldValue
 
   @TypeGQL.Field((): ReturnTypeFuncValue => JSONScalar, { nullable: true })
   public validate?: JSONType

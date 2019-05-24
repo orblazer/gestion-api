@@ -1,8 +1,9 @@
 import { Typegoose, prop, Ref, InstanceType } from 'typegoose'
 import mongoose from 'mongoose'
-import { User } from './User'
 import { Lang } from '../graphql/resolvers/textLocalized'
 import { JSONType } from '../graphql/resolvers/scalars/JSON'
+import { FieldValue } from '../graphql/resolvers/scalars/FieldValue'
+import { User } from './User'
 import { Lib } from '@types'
 
 export interface InputFields {
@@ -12,6 +13,7 @@ export interface InputFields {
   label: string;
   errorName?: string;
   placeholder?: string;
+  defaultValue?: FieldValue;
   validate?: JSONType;
   options?: { name: string; value: string }[];
   private?: boolean;
