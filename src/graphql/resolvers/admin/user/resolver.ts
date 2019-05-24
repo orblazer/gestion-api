@@ -51,6 +51,9 @@ export default class UserResolver {
     } catch {
       throw new ApolloError('Username not found', 'AUTH_ERROR')
     }
+    if (user === null) {
+      throw new ApolloError('Username not found', 'AUTH_ERROR')
+    }
 
     if (!user.comparePassword(password)) {
       throw new ApolloError('Invalid username or password', 'AUTH_ERROR')
