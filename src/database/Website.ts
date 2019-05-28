@@ -51,7 +51,7 @@ export class Website extends Typegoose {
   public createdAt: Date = new Date()
 
   @prop({ ref: User })
-  public author_id: Ref<User>
+  public authorId: Ref<User>
 
   @arrayProp({ itemsRef: User })
   public users: Ref<User>[]

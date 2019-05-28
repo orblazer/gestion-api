@@ -3,13 +3,27 @@ import * as TypeGQL from 'type-graphql'
 import { ObjectId } from 'mongodb'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
 import { DocumentQuery, Document } from 'mongoose'
+import builder from '../../../../lib/builder'
 import { HasKey } from '../../../../graphql/decorators/Auth'
 import * as Auth from '../../../../graphql/lib/Auth'
-import UserDB, { Instance as UserInstance, UserRole, UserJWT, User } from '../../../../database/User'
-import WebsiteDB, { Instance as WebsiteInstance } from '../../../../database/Website'
+import UserDB, {
+  Instance as UserInstance,
+  UserRole,
+  UserJWT,
+  User
+} from '../../../../database/User'
+import WebsiteDB, {
+  Instance as WebsiteInstance
+} from '../../../../database/Website'
+import { normalize } from '../../../../lib/directory'
 import { PubSubConstants } from '../../pubSub'
 import PaginationArgs from '../../paginationArgs'
-import WebsiteGeneration, { WebsiteGenerationPayload } from './websiteGeneration.type'
+import WebsiteTemplateDB, {
+  Instance as WebsiteTemplateInstance
+} from '../../../../database/WebsiteTemplate'
+import WebsiteGeneration, {
+  WebsiteGenerationPayload
+} from './websiteGeneration.type'
 import WebsiteInput from './input'
 import Website from '.'
 
@@ -21,8 +35,12 @@ export default class WebsiteResolver {
   @TypeGQL.Authorized()
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Query((): ReturnTypeFuncValue => [Website], { nullable: 'items' })
-  public allWebsites (@TypeGQL.Ctx('user') user: UserJWT): DocumentQuery<WebsiteInstance[], Document> {
-    const filter = Auth.hasPermission(user, UserRole.ADMIN) ? {} : { users: user.id }
+  public allWebsites (
+    @TypeGQL.Ctx('user') user: UserJWT
+  ): DocumentQuery<WebsiteInstance[], Document> {
+    const filter = Auth.hasPermission(user, UserRole.ADMIN)
+      ? {}
+      : { users: user.id }
     return WebsiteDB.find(filter).sort({
       createdAt: -1
     })
@@ -31,12 +49,14 @@ export default class WebsiteResolver {
   @TypeGQL.Authorized()
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Query((): ReturnTypeFuncValue => Website, { nullable: true })
-  public getWebsite (@TypeGQL.Arg('id') id: ObjectId, @TypeGQL.Ctx('user') user: UserJWT): DocumentQuery<WebsiteInstance, Document> {
+  public getWebsite (
+    @TypeGQL.Arg('id') id: ObjectId,
+      @TypeGQL.Ctx('user') user: UserJWT
+  ): DocumentQuery<WebsiteInstance, Document> {
     if (Auth.hasPermission(user, UserRole.ADMIN)) {
       return WebsiteDB.findById(id)
     } else {
       return WebsiteDB.findOne({
-        _id: id,
         users: user.id,
         enabled: true
       })
@@ -49,87 +69,49 @@ export default class WebsiteResolver {
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Website)
-  public createWebsite (@TypeGQL.Arg('input', (): ReturnTypeFuncValue => WebsiteInput) input: WebsiteInput): void {
-    // AssertValid.create(input)
-    /* const _id = new ObjectId()
-    const path = normalize(websiteDir + '/client/' + _id)
-    let template: WebsiteTemplate = global.websiteTemplates[input.template]
+  public async createWebsite (
+    @TypeGQL.Arg('input', (): ReturnTypeFuncValue => WebsiteInput)
+      input: WebsiteInput,
+      @TypeGQL.Ctx('user') user: UserJWT
+  ): Promise<WebsiteInstance> {
+    const _id = new ObjectId()
+    let template: null | WebsiteTemplateInstance = null
 
-    global.fastify.log.debug(
-      `Creating website ${input.name}` + (template !== null ? ` (${template.name})` : '') + '...'
-    )
+    if (input.template) {
+      template = await WebsiteTemplateDB.findById(input.template)
+    }
+
     const website = {
       _id,
+      ftp: input.ftp,
       name: input.name,
       description: input.description,
       url: input.url,
+      enabled: input.enabled,
+      authorId: user.id,
       users: input.users,
       template: input.template,
       fields: input.fields,
-      directory: path
+      directory: normalize(this.getPath() + '/' + _id)
     }
-    const apply = () => {
-      return new WebsiteDB(website).save().then(data => {
-        global.fastify.log.debug(`Website ${input.name} has been create`)
+
+    return new WebsiteDB(website).save().then(
+      async (data): Promise<WebsiteInstance> => {
+        await builder.build(data, template)
+        await builder.upload(data, template.build.directory)
         return data
-      })
-    }
-
-    if (template === null) {
-      return fs.mkdirp(path).then(() => normalize(uploadDir + '/' + _id))
-    }
-
-    const internalModules =
-      typeof template.internal_modules !== 'undefined' ? normalize(path + '/' + template.internal_modules.name) : null
-    return fs
-      .copy(template.content, path)
-      .then(() => {
-        if (internalModules === null) return Promise.resolve()
-
-        return fs
-          .remove(internalModules)
-          .then(() => fs.ensureSymlink(template.internal_modules.path, internalModules, 'dir'))
-      })
-      .then(() => normalize(uploadDir + '/' + _id))
-      .then(() => {
-        if (typeof template.initialize === 'function') {
-          return UserDB.find(
-            { _id: { $in: input.users } },
-            {
-              _id: true,
-              displayName: true,
-              username: true,
-              role: true,
-              createdAt: true
-            }
-          ).then(users => {
-            try {
-              const res = template.initialize(
-                initializeContext,
-                Object.assign({}, website, { users, template }),
-                path,
-                website._id.toString()
-              )
-
-              if (res instanceof Promise) {
-                return res.then(apply)
-              } else {
-                return apply()
-              }
-            } catch (err) {
-              return Promise.reject(err)
-            }
-          })
-        } else {
-          return apply()
-        }
-      }) */
+      }
+    )
   }
 
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Website)
-  public updateWebsite (@TypeGQL.Arg('id') id: ObjectId, @TypeGQL.Arg('input', (): ReturnTypeFuncValue => WebsiteInput) input: WebsiteInput): void {
+  public updateWebsite (
+    @TypeGQL.Arg('id') id: ObjectId,
+      @TypeGQL.Arg('input', (): ReturnTypeFuncValue => WebsiteInput)
+      input: WebsiteInput
+  ): void {
     // AssertValid.update(input)
     /* let template: WebsiteTemplate = global.websiteTemplates[input.template]
     return WebsiteDB.findById(id).then(oldData => {
@@ -239,8 +221,13 @@ export default class WebsiteResolver {
   @TypeGQL.Authorized()
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Subscription({ topics: PubSubConstants.WEBSITE_GENERATION })
-  public websiteGeneration (@TypeGQL.Root() payload: WebsiteGenerationPayload): WebsiteGeneration {
-    global.fastify.log.debug(payload, `Subscription ${PubSubConstants.WEBSITE_GENERATION} : `)
+  public websiteGeneration (
+    @TypeGQL.Root() payload: WebsiteGenerationPayload
+  ): WebsiteGeneration {
+    global.fastify.log.debug(
+      payload,
+      `Subscription ${PubSubConstants.WEBSITE_GENERATION} : `
+    )
     return {
       ...payload,
       startDate: new Date()
@@ -251,12 +238,26 @@ export default class WebsiteResolver {
    * Field
    */
   @TypeGQL.FieldResolver((): ReturnTypeFuncValue => User)
-  public users (@TypeGQL.Args() { offset, limit }: PaginationArgs, @TypeGQL.Root() website: WebsiteInstance): DocumentQuery<UserInstance[], Document> {
+  public users (
+    @TypeGQL.Args() { offset, limit }: PaginationArgs,
+      @TypeGQL.Root() website: WebsiteInstance
+  ): DocumentQuery<UserInstance[], Document> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const options: any = { sort: { createdAt: 1 } }
-    if (offset) { options.offset = offset }
-    if (limit) { options.limit = limit }
+    if (offset) {
+      options.offset = offset
+    }
+    if (limit) {
+      options.limit = limit
+    }
 
     return UserDB.find({ _id: { $in: website.users } }, null, options)
+  }
+
+  /**
+   * utils
+   */
+  private getPath (): string {
+    return `${process.env.WEBSITE_DIR}`
   }
 }
