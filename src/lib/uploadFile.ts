@@ -32,7 +32,7 @@ export default function uploadFile (
 
     const fullPath = Path.resolve(filePath)
     const folderPath = Path.dirname(fullPath)
-    fs.mkdirp(folderPath)
+    fs.ensureDir(folderPath)
       .then((): void => {
         stream
           .pipe(fs.createWriteStream(fullPath))
