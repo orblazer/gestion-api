@@ -76,6 +76,12 @@ export default class WebsiteResolver {
       @TypeGQL.Ctx('user') user: UserJWT
   ): Promise<WebsiteInstance> {
     const _id = new ObjectId()
+    const logger = global.loggers.graphql.child({
+      website: {
+        id: _id,
+        name: input.name
+      }
+    })
 
     // Retrieve template
     let template: null | WebsiteTemplateInstance = null
@@ -97,11 +103,18 @@ export default class WebsiteResolver {
       directory: normalize(this.getPath() + '/' + _id)
     }
 
+    const start = Date.now()
+    logger.debug('Creating website...')
+
     return new WebsiteDB(website).save().then(
       async (data): Promise<WebsiteInstance> => {
         // Build and upload website
         await builder.build(data, template)
         await builder.upload(data, template.build.directory)
+
+        const times = (Date.now() - start) / 1000
+        logger.debug(`Website as been created, in ${times}s`)
+
         return data
       }
     )
@@ -116,6 +129,12 @@ export default class WebsiteResolver {
       input: WebsiteInput
   ): Promise<WebsiteInstance> {
     const website = await WebsiteDB.findById(id)
+    const logger = global.loggers.graphql.child({
+      website: {
+        id,
+        name: input.name || website.name
+      }
+    })
 
     ;(input as any).updatedAt = Date.now()
 
@@ -124,14 +143,22 @@ export default class WebsiteResolver {
       (website as any)[key] = (input as any)[key]
     })
 
+    // Retrieve template
     let template: null | WebsiteTemplateInstance = null
     if (website.template) {
       template = await WebsiteTemplateDB.findById(website.template)
     }
 
+    const start = Date.now()
+    logger.debug('Updating website...')
+
     return website.save().then(async (): Promise<WebsiteInstance> => {
       await builder.build(website, template)
       await builder.upload(website, template.build.directory)
+
+      const times = (Date.now() - start) / 1000
+      logger.debug(`Website as been updated, in ${times}s`)
+
       return website
     })
   }
