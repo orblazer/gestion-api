@@ -5,7 +5,10 @@ import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
 export interface WebsiteGenerationPayload {
   id: string;
   status: WebsiteGenerationStatus;
+  step?: WebsiteGenerationStep;
   reason: string;
+  startDate: Date;
+  endDate?: Date;
 }
 
 export enum WebsiteGenerationStatus {
@@ -14,8 +17,18 @@ export enum WebsiteGenerationStatus {
   SUCCESS
 }
 
+export enum WebsiteGenerationStep {
+  BUILD,
+  UPLOAD,
+  CLEAN
+}
+
 TypeGQL.registerEnumType(WebsiteGenerationStatus, {
   name: 'WebsiteGenerationStatus'
+})
+
+TypeGQL.registerEnumType(WebsiteGenerationStep, {
+  name: 'WebsiteGenerationStep'
 })
 
 @TypeGQL.ObjectType()
@@ -26,9 +39,17 @@ export default class WebsiteGeneration {
   @TypeGQL.Field((): ReturnTypeFuncValue => WebsiteGenerationStatus)
   public status: WebsiteGenerationStatus
 
+  @TypeGQL.Field((): ReturnTypeFuncValue => WebsiteGenerationStep, {
+    nullable: true
+  })
+  public step?: WebsiteGenerationStep
+
   @TypeGQL.Field()
   public reason: string
 
   @TypeGQL.Field()
-  public startDate: Date = new Date()
+  public startDate: Date
+
+  @TypeGQL.Field({ nullable: true })
+  public endDate?: Date
 }
