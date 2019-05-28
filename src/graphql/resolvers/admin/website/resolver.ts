@@ -166,20 +166,26 @@ export default class WebsiteResolver {
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Website)
-  public deleteWebsite (@TypeGQL.Arg('id') id: ObjectId): void {
-    /* return WebsiteDB.findById(id).then((data) => {
-      console.log(data.template)
-      global.fastify.log.debug(`deleting website ${data.name} (${data.template})...`)
-      return fs
-        .remove(data.directory)
-        .then(() => fs.remove(normalize(`${process.env.UPLOAD_DIR}/${id}`)))
-        .then(() => {
-          return data.remove().then((data) => {
-            global.fastify.log.debug(`Website ${data.name} has been deleted`)
-            return data
-          })
-        })
-    }) */
+  public async deleteWebsite (@TypeGQL.Arg('id') id: ObjectId): Promise<WebsiteInstance> {
+    const website = await WebsiteDB.findById(id)
+    const logger = global.loggers.builder.child({
+      website: {
+        id,
+        name: website.name
+      }
+    })
+
+    const start = Date.now()
+    logger.debug('Deleting website...')
+
+    return builder.clean(website).then(async (): Promise<WebsiteInstance> => {
+      await website.remove()
+
+      const times = (Date.now() - start) / 1000
+      logger.debug(`Website as been deleted, in ${times}s`)
+
+      return website
+    })
   }
 
   /**
