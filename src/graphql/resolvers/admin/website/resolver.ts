@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import 'reflect-metadata'
 import * as TypeGQL from 'type-graphql'
 import { ObjectId } from 'mongodb'
@@ -75,8 +76,9 @@ export default class WebsiteResolver {
       @TypeGQL.Ctx('user') user: UserJWT
   ): Promise<WebsiteInstance> {
     const _id = new ObjectId()
-    let template: null | WebsiteTemplateInstance = null
 
+    // Retrieve template
+    let template: null | WebsiteTemplateInstance = null
     if (input.template) {
       template = await WebsiteTemplateDB.findById(input.template)
     }
@@ -97,6 +99,7 @@ export default class WebsiteResolver {
 
     return new WebsiteDB(website).save().then(
       async (data): Promise<WebsiteInstance> => {
+        // Build and upload website
         await builder.build(data, template)
         await builder.upload(data, template.build.directory)
         return data
@@ -107,93 +110,30 @@ export default class WebsiteResolver {
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Website)
-  public updateWebsite (
+  public async updateWebsite (
     @TypeGQL.Arg('id') id: ObjectId,
       @TypeGQL.Arg('input', (): ReturnTypeFuncValue => WebsiteInput)
       input: WebsiteInput
-  ): void {
-    // AssertValid.update(input)
-    /* let template: WebsiteTemplate = global.websiteTemplates[input.template]
-    return WebsiteDB.findById(id).then(oldData => {
-      global.fastify.log.debug(`Updating website ${input.name}${template !== null ? ` (${template.name})` : ''}...`)
-      const apply = (website: WebsiteType) => {
-        website.name = input.name
-        website.description = input.description
-        website.url = input.url
-        website.template = input.template
-        website.fields = input.fields
+  ): Promise<WebsiteInstance> {
+    const website = await WebsiteDB.findById(id)
 
-        return website.save().then(data => {
-          global.fastify.log.debug(`Website ${input.name} has been updated`)
-          return data
-        })
-      }
+    ;(input as any).updatedAt = Date.now()
 
-      if (template === null) {
-        return fs
-          .remove(oldData.directory)
-          .then(() => fs.mkdirp(oldData.directory))
-          .then(() => apply(oldData))
-      }
+    // Apply modification
+    Object.keys(input).forEach((key): void => {
+      (website as any)[key] = (input as any)[key]
+    })
 
-      const internalModules =
-        typeof template.internal_modules !== 'undefined'
-          ? normalize(oldData.directory + '/' + template.internal_modules.name)
-          : null
-      return fs
-        .remove(oldData.directory)
-        .then(() => fs.copy(template.content, oldData.directory))
-        .then(() => {
-          if (internalModules === null) return Promise.resolve()
+    let template: null | WebsiteTemplateInstance = null
+    if (website.template) {
+      template = await WebsiteTemplateDB.findById(website.template)
+    }
 
-          return fs
-            .remove(internalModules)
-            .then(() => fs.ensureSymlink(template.internal_modules.path, internalModules, 'dir'))
-        })
-        .then(() => {
-          if (typeof template.initialize === 'function') {
-            const website = {
-              _id: oldData._id,
-              name: input.name,
-              description: input.description,
-              url: input.url,
-              template: input.template,
-              fields: input.fields,
-              directory: oldData.directory
-            }
-
-            return UserDB.find(
-              { _id: { $in: input.users } },
-              {
-                _id: true,
-                displayName: true,
-                username: true,
-                role: true,
-                createdAt: true
-              }
-            ).then(users => {
-              try {
-                const res = template.initialize(
-                  initializeContext,
-                  Object.assign({}, website, { users, template }),
-                  website.directory,
-                  website._id.toString()
-                )
-
-                if (res instanceof Promise) {
-                  return res.then(() => apply(oldData))
-                } else {
-                  return apply(oldData)
-                }
-              } catch (err) {
-                return Promise.reject(err)
-              }
-            })
-          } else {
-            return apply(oldData)
-          }
-        })
-    }) */
+    return website.save().then(async (): Promise<WebsiteInstance> => {
+      await builder.build(website, template)
+      await builder.upload(website, template.build.directory)
+      return website
+    })
   }
 
   @TypeGQL.Authorized(UserRole.ADMIN)
