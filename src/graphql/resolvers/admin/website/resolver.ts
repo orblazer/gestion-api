@@ -197,7 +197,13 @@ export default class WebsiteResolver {
   public websiteGeneration (
     @TypeGQL.Root() payload: WebsiteGenerationPayload
   ): WebsiteGeneration {
-    global.fastify.log.debug(
+    const logger = global.loggers.builder.child({
+      website: {
+        id: payload.id
+      }
+    })
+
+    logger.debug(
       payload,
       `Subscription ${PubSubConstants.WEBSITE_GENERATION} : `
     )
