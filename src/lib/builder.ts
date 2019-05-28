@@ -4,14 +4,13 @@ import { execFile } from 'child_process'
 import { extract } from 'tar'
 import fs from 'fs-extra'
 import { mergeDeep } from 'apollo-utilities'
-import SFTPClient from 'ssh2-sftp-client'
-import FTPClient from 'jsftp'
 import {
   Instance as WebsiteTemplate,
   WebsiteTemplatePackager
 } from '../database/WebsiteTemplate'
 import { Instance as Website, WebsiteFTPProtocol } from '../database/Website'
-import { walk } from '../lib/directory'
+import { walk, normalize } from '../lib/directory'
+import FTPClient from './ftpClient'
 
 const exec = util.promisify(execFile)
 
@@ -100,65 +99,36 @@ async function upload (website: Website, uploadFolder: string): Promise<void> {
     (file): { local: string; remote: string } => {
       return {
         local: file,
-        remote: file.replace(folder, '.')
+        remote: normalize(website.ftp.directory + file.replace(folder, '.'))
       }
     }
   )
 
   logger.debug('Uploading website...')
 
-  if (website.ftp.protocol === WebsiteFTPProtocol.FTP) {
-    const ftp = new FTPClient({
-      host: website.ftp.host,
-      port: website.ftp.port,
-      user: website.ftp.user,
-      pass: website.ftp.password
-    })
+  const client = new FTPClient({
+    sftp: website.ftp.protocol === WebsiteFTPProtocol.SFTP,
+    host: website.ftp.host,
+    port: website.ftp.port,
+    user: website.ftp.user,
+    password: website.ftp.password
+  })
 
-    await new Promise(
-      (resolve, reject): void => {
-        ftp.once(
-          'connect',
-          async (): Promise<void> => {
-            const put = util.promisify(ftp.put)
+  try {
+    await client.connect()
 
-            await Promise.all(
-              files.map((file): Promise<void> => put(file.local, file.remote))
-            ).catch(reject)
+    for (const file of files) {
+      const { dir } = Path.posix.parse(file.remote)
 
-            ftp.destroy()
-            resolve()
-          }
-        )
-        ftp.once('error', reject)
-        ftp.once('timeout', reject)
-      }
-    ).catch(
-      (err): void => {
-        logger.error(`Website uploading failed, ${err}`)
-        throw err
-      }
-    )
-  } else {
-    const sftp = new SFTPClient()
+      await client
+        .mkdir(dir, true)
+        .then((): Promise<void> => client.put(file.local, file.remote))
+    }
 
-    await sftp
-      .connect({
-        host: website.ftp.host,
-        port: website.ftp.port,
-        username: website.ftp.user,
-        password: website.ftp.password
-      })
-      .then(
-        (): Promise<string[]> => {
-          return Promise.all(
-            files.map(
-              (file): Promise<string> => sftp.fastPut(file.local, file.remote)
-            )
-          )
-        }
-      )
-      .then((): Promise<void> => sftp.end())
+    await client.close()
+  } catch (err) {
+    logger.error(`Website uploading failed, ${err}`)
+    throw err
   }
 
   const times = (Date.now() - start) / 1000
