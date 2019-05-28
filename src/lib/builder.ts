@@ -165,7 +165,25 @@ async function upload (website: Website, uploadFolder: string): Promise<void> {
   logger.debug(`Website has been uploaded in ${times}s`)
 }
 
+async function clean (website: Website): Promise<void> {
+  const logger = global.loggers.builder.child({
+    website: {
+      id: website._id,
+      name: website.name
+    },
+    buildStep: 'upload'
+  })
+  const start = Date.now()
+  logger.debug('Deleting website...')
+
+  await fs.remove(website.directory)
+
+  const times = (Date.now() - start) / 1000
+  logger.debug(`Website has been deleted in ${times}s`)
+}
+
 export default {
   build,
-  upload
+  upload,
+  clean
 }
