@@ -1,7 +1,7 @@
+import { Logger } from 'pino'
 import * as database from './database'
 import server, { FastifyInstance } from './server'
 import graphql from './graphql'
-import Builder from './lib/builder'
 
 global.isProduction = process.env.NODE_ENV === 'production'
 try {
@@ -36,12 +36,15 @@ if (
 database
   .connect()
   .then(async (): Promise<void> => {
-    // Initialize builder
-    global.builder = new Builder()
-
     // Initialize fastify
     const fastify: FastifyInstance = server()
     global.fastify = fastify
+
+    // Initialize loggers
+    global.loggers = {
+      graphql: (fastify.log as Logger).child({ type: 'graphql' }),
+      builder: (fastify.log as Logger).child({ type: 'builder' })
+    }
 
     // Initialize graphql
     await graphql(fastify)

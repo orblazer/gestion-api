@@ -23,11 +23,11 @@ export default async function (fastify: FastifyInstance): Promise<void> {
     scalarsMap: [{ type: ObjectId, scalar: ObjectIdScalar }],
     emitSchemaFile: resolve(__dirname, 'schema.gql')
   }).catch((err): void => {
-    fastify.log.error(err)
+    global.loggers.graphql.error(err)
 
     if (err.details) {
       err.details.forEach((detail: Error): void => {
-        fastify.log.error(detail)
+        global.loggers.graphql.error(detail)
       })
     }
   })

@@ -1,15 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/indent */
 import { UserJWT } from 'src/database/User'
 import { FastifyInstance } from 'src/server'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import Builder from 'src/lib/builder'
+import { Logger } from 'pino'
 
 declare global {
   namespace NodeJS {
     interface Global {
       fastify: FastifyInstance;
       isProduction: boolean;
-      builder: Builder;
+      loggers: { [key: string]: Logger };
     }
   }
 }
