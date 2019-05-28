@@ -1,9 +1,13 @@
 import { AuthChecker } from 'type-graphql'
 import { GraphqlContext } from '@types'
+import { isEditorKey } from './decorators/Auth'
 
-const customAuthCheck: AuthChecker<GraphqlContext> = ({ context: { user, key } }, roles): boolean => {
+const customAuthCheck: AuthChecker<GraphqlContext> = (
+  { context: { user, key } },
+  roles
+): boolean => {
   // Is graphql editor
-  if (user === false && key === 'admin:yc6p39p7BYFx7QAiYqzJ29Ku2Hr46fS2' && !global.isProduction) {
+  if (user === false && isEditorKey(key)) {
     return true
   }
 
