@@ -2,23 +2,20 @@ import 'reflect-metadata'
 import * as TypeGQL from 'type-graphql'
 import fs from 'fs-extra'
 import { ObjectId } from 'mongodb'
-import { Lib, Database } from '@types'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
-import { DocumentQuery, Document } from 'mongoose'
-import uploadImage from '../../../../lib/uploadImage'
-import { normalize } from '../../../../lib/directory'
-import WebsiteDB, { Instance as WebsiteInstance } from '../../../../database/Website'
-import UserDB, { Instance as UserInstance, UserJWT } from '../../../../database/User'
-import ServiceDB, { Instance as ServiceInstance } from '../../../../database/Service'
-import PaginationArgs from '../../paginationArgs'
-import Website from '../../admin/website'
-import User from '../../admin/user'
-import { HasKey } from '../../../decorators/Auth'
+import uploadImage, { UploadImageOptions } from '@/lib/uploadImage'
+import { normalize } from '@/lib/directory'
+import { UserJWT } from '@/database/admin/User'
+import ServiceDB, { Instance as ServiceInstance } from '@/database/modules/Service'
+import HasKey from '../../../decorators/HasKey'
+import createBaseResolver from '../../content/resolver'
 import ServiceInput from './input'
 import Service from '.'
+import { TextLocalized } from '@types'
 
+const ContentBaseResolver = createBaseResolver<ServiceInstance>({ plural: 'Services', single: 'Service' }, Service, ServiceDB)
 const subFolder = 'services'
-const imageOptions: Lib.UploadImageOptions = {
+const imageOptions: UploadImageOptions = {
   image: {
     width: 940,
     height: 480,
@@ -31,40 +28,16 @@ const imageOptions: Lib.UploadImageOptions = {
 }
 
 @TypeGQL.Resolver(Service)
-export default class ServiceResolver {
-  /**
-   * Query
-   */
-  @TypeGQL.Authorized()
-  @HasKey((): string => process.env.PANEL_KEY)
-  @TypeGQL.Query((): ReturnTypeFuncValue => [Service], { nullable: true })
-  public allServices (@TypeGQL.Arg('website') website: ObjectId): DocumentQuery<ServiceInstance[], Document> {
-    return ServiceDB.find({ websiteId: website }).sort({
-      createdAt: -1
-    })
-  }
-
-  @TypeGQL.Authorized()
-  @HasKey((): string => process.env.PANEL_KEY)
-  @TypeGQL.Query((): ReturnTypeFuncValue => Service, { nullable: true })
-  public getService (@TypeGQL.Arg('website') website: ObjectId, @TypeGQL.Arg('id') id: ObjectId): DocumentQuery<ServiceInstance, Document> {
-    return ServiceDB.findOne({ _id: id, websiteId: website })
-  }
-
-  @TypeGQL.Authorized()
-  @HasKey()
-  @TypeGQL.Query((): ReturnTypeFuncValue => [Service], { nullable: true })
-  public getServices (@TypeGQL.Args() { offset, limit }: PaginationArgs, @TypeGQL.Ctx('key') key: string): DocumentQuery<ServiceInstance[], Document> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const options: any = { sort: { createdAt: 1 } }
-    if (offset) { options.offset = offset }
-    if (limit) { options.limit = limit }
-
-    return ServiceDB.find({ visible: true, websiteId: key }, null, options)
-  }
-
+export default class ServiceResolver extends ContentBaseResolver {
   /**
    * Mutation
+   */
+
+  /**
+   * Create an new service
+   *
+   * @param website the website id
+   * @param input the service data
    */
   @TypeGQL.Authorized()
   @HasKey((): string => process.env.PANEL_KEY)
@@ -74,7 +47,7 @@ export default class ServiceResolver {
     @TypeGQL.Arg('input', (): ReturnTypeFuncValue => ServiceInput) input: ServiceInput,
     @TypeGQL.Ctx('user') user: UserJWT
   ): Promise<ServiceInstance> {
-    const service = new ServiceDB({
+    return new ServiceDB({
       websiteId: website,
       title: input.title,
       image: await uploadImage(
@@ -85,11 +58,16 @@ export default class ServiceResolver {
       visible: input.visible,
       authorId: user.id,
       updatedAt: new Date()
-    })
-
-    return service.save()
+    }).save()
   }
 
+  /**
+   * Update an service
+   *
+   * @param website the website id
+   * @param id the service id
+   * @param input the new service data
+   */
   @TypeGQL.Authorized()
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Service)
@@ -99,19 +77,25 @@ export default class ServiceResolver {
     @TypeGQL.Arg('input', (): ReturnTypeFuncValue => ServiceInput) input: ServiceInput
   ): Promise<ServiceInstance> {
     const service = await ServiceDB.findOne({ _id: id, websiteId: website })
-    service.title = input.title as Database.TextLocalized
+    service.title = input.title as TextLocalized
     if (input.image) {
       const image = await uploadImage(input.image, Object.assign({}, imageOptions, { path: this.getFolder(website) }))
       await fs.remove(normalize(`${this.getFolder(website)}/${service.image.id}`))
       service.image = image
     }
-    service.description = input.description as Database.TextLocalized
+    service.description = input.description as TextLocalized
     service.visible = input.visible || false
     service.updatedAt = new Date()
 
     return service.save()
   }
 
+  /**
+   * Delete an service
+   *
+   * @param website the website if
+   * @param id the service id
+   */
   @TypeGQL.Authorized()
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Service)
@@ -120,19 +104,6 @@ export default class ServiceResolver {
     await fs.remove(normalize(`${this.getFolder(website)}/${service.image.id}`))
 
     return service.remove()
-  }
-
-  /**
-   * Field
-   */
-  @TypeGQL.FieldResolver((): ReturnTypeFuncValue => Website)
-  public website (@TypeGQL.Root('website_id') websiteId: ObjectId): DocumentQuery<WebsiteInstance, Document> {
-    return WebsiteDB.findById(websiteId)
-  }
-
-  @TypeGQL.FieldResolver((): ReturnTypeFuncValue => User)
-  public author (@TypeGQL.Root('author_id') authorId: ObjectId): DocumentQuery<UserInstance, Document> {
-    return UserDB.findById(authorId)
   }
 
   /**
