@@ -6,7 +6,7 @@ import { GraphQLUpload } from 'graphql-upload'
 import ContentInput from '../../content/input'
 
 @TypeGQL.InputType()
-export default class ServiceInput extends ContentInput {
+export default class VehicleInput extends ContentInput {
   @TypeGQL.Field((): ReturnTypeFuncValue => GraphQLUpload)
   public image: GraphQLScalarType
 
