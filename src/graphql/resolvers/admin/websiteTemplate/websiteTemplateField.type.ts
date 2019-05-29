@@ -29,7 +29,7 @@ export default class WebsiteTemplateField {
   @TypeGQL.Field((): ReturnTypeFuncValue => FieldValueScalar, {
     nullable: true
   })
-  private defaultValue?: FieldValue
+  public defaultValue?: FieldValue
 
   @TypeGQL.Field((): ReturnTypeFuncValue => JSONScalar, { nullable: true })
   public validate?: JSONType

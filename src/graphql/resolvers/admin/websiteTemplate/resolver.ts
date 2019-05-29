@@ -5,11 +5,11 @@ import { ObjectId } from 'mongodb'
 import fs from 'fs-extra'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
 import { DocumentQuery, Document } from 'mongoose'
-import { HasKey } from '../../../../graphql/decorators/Auth'
-import uploadFile from '../../../../lib/uploadFile'
-import uploadImage from '../../../../lib/uploadImage'
-import UserDB, { Instance as UserInstance, UserRole, UserJWT, User } from '../../../../database/User'
-import WebsiteTemplateDB, { Instance as WebsiteTemplateInstance } from '../../../../database/WebsiteTemplate'
+import HasKey from '@/graphql/decorators/HasKey'
+import uploadFile from '@/lib/uploadFile'
+import uploadImage from '@/lib/uploadImage'
+import UserDB, { Instance as UserInstance, UserRole, UserJWT, User } from '@/database/User'
+import WebsiteTemplateDB, { Instance as WebsiteTemplateInstance } from '@/database/WebsiteTemplate'
 import WebsiteTemplateInput from './input'
 import WebsiteTemplateInputCreate from './input-create'
 import WebsiteTemplate from '.'
@@ -21,6 +21,10 @@ export default class WebsiteTemplateResolver {
   /**
    * Query
    */
+
+  /**
+   * Get all website templates
+   */
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Query((): ReturnTypeFuncValue => [WebsiteTemplate], { nullable: 'items' })
@@ -30,6 +34,9 @@ export default class WebsiteTemplateResolver {
     })
   }
 
+  /**
+   * Get all enabled templates
+   */
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Query((): ReturnTypeFuncValue => [WebsiteTemplate], { nullable: 'items' })
@@ -39,6 +46,11 @@ export default class WebsiteTemplateResolver {
     })
   }
 
+  /**
+   * Get an specific website template
+   *
+   * @param id the template id
+   */
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Query((): ReturnTypeFuncValue => WebsiteTemplate)
@@ -49,6 +61,12 @@ export default class WebsiteTemplateResolver {
   /**
    * Mutation
    */
+
+  /**
+   * Create an new website template
+   *
+   * @param input The website template data
+   */
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => WebsiteTemplate)
@@ -56,13 +74,13 @@ export default class WebsiteTemplateResolver {
     @TypeGQL.Arg('input', (): ReturnTypeFuncValue => WebsiteTemplateInputCreate) input: WebsiteTemplateInputCreate,
     @TypeGQL.Ctx('user') user: UserJWT
   ): Promise<WebsiteTemplateInstance> {
+    // Upload file and preview
     const file = await uploadFile(input.file, {
       path: this.getPath(),
       folder: true,
       newName: 'website'
     })
     let preview
-
     if (input.preview) {
       preview = await uploadImage(input.preview, {
         path: this.getPath(),
@@ -71,7 +89,7 @@ export default class WebsiteTemplateResolver {
       })
     }
 
-    const websiteTemplate = new WebsiteTemplateDB({
+    return new WebsiteTemplateDB({
       name: input.name,
       description: input.description,
       version: input.version,
@@ -82,9 +100,7 @@ export default class WebsiteTemplateResolver {
       fields: input.fields,
       file,
       preview
-    })
-
-    return websiteTemplate.save()
+    }).save()
   }
 
   @TypeGQL.Authorized(UserRole.ADMIN)
@@ -115,12 +131,11 @@ export default class WebsiteTemplateResolver {
       delete input.preview
     }
 
-    (input as any).updatedAt = Date.now()
-
     // Apply modification
     Object.keys(input).forEach((key): void => {
       (websiteTemplate as any)[key] = (input as any)[key]
     })
+    websiteTemplate.updatedAt = new Date()
 
     return websiteTemplate.save()
   }
