@@ -1,10 +1,11 @@
 import { Typegoose, prop, Ref, InstanceType } from 'typegoose'
 import mongoose from 'mongoose'
-import { Lang } from '../graphql/resolvers/textLocalized'
-import { JSONType } from '../graphql/resolvers/scalars/JSON'
-import { FieldValue } from '../graphql/resolvers/scalars/FieldValue'
+import { Lang } from '@/graphql/resolvers/textLocalized'
+import { JSONType } from '@/graphql/resolvers/scalars/JSON'
+import { FieldValue } from '@/graphql/resolvers/scalars/FieldValue'
 import { User } from './User'
-import { Lib } from '@types'
+import { UploadFileResult } from '@/lib/uploadFile'
+import { UploadImageResult } from '@/lib/uploadImage'
 
 export interface InputFields {
   type: string;
@@ -67,10 +68,10 @@ export class WebsiteTemplate extends Typegoose {
   public fields: InputFields[]
 
   @prop()
-  public file: Lib.UploadFileResult
+  public file: UploadFileResult
 
   @prop()
-  public preview: Lib.UploadImageResult
+  public preview: UploadImageResult
 
   @prop({ default: null })
   public build: WebsiteTemplateBuild = null

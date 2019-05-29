@@ -1,7 +1,7 @@
 import { Typegoose, prop, arrayProp, Ref, InstanceType } from 'typegoose'
 import mongoose from 'mongoose'
 import isURL from 'validator/lib/isURL'
-import { FieldValue } from '../graphql/resolvers/scalars/FieldValue'
+import { FieldValue } from '@/graphql/resolvers/scalars/FieldValue'
 import { User } from './User'
 import { WebsiteTemplate, WebsiteTemplateModule } from './WebsiteTemplate'
 

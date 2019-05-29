@@ -1,21 +1,22 @@
 import { Typegoose, Ref, prop, InstanceType } from 'typegoose'
 import mongoose from 'mongoose'
-import { Database, Lib } from '@types'
+import { TextLocalized } from '@types'
 import { Website } from './Website'
 import { User } from './User'
+import { UploadImageResult } from '@/lib/uploadImage'
 
 export class Service extends Typegoose {
   @prop({ required: true, ref: Website })
   public websiteId: Ref<Website>
 
   @prop()
-  public title: Database.TextLocalized
+  public title: TextLocalized
 
   @prop()
-  public description: Database.TextLocalized
+  public description: TextLocalized
 
   @prop({ _id: false })
-  public image: Lib.UploadImageResult
+  public image: UploadImageResult
 
   @prop({ default: false })
   public visible: boolean

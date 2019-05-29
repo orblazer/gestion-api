@@ -1,9 +1,21 @@
 import crypto from 'crypto'
-import { prop, Typegoose, staticMethod, instanceMethod, ModelType, InstanceType } from 'typegoose'
+import {
+  prop,
+  Typegoose,
+  staticMethod,
+  instanceMethod,
+  ModelType,
+  InstanceType
+} from 'typegoose'
 import mongoose, { DocumentQuery, Document } from 'mongoose'
 import { ObjectId } from 'mongodb'
 import isEmail from 'validator/lib/isEmail'
-import { Database } from '@types'
+
+export interface UserPassword {
+  salt: string;
+  hash: string;
+  iterations: number;
+}
 
 export enum UserRole {
   CLIENT = 'client',
@@ -29,7 +41,7 @@ export class User extends Typegoose {
   public username: string
 
   @prop({ required: true, unique: true, _id: false })
-  public password: Database.UserPassword
+  public password: UserPassword
 
   @prop({ default: UserRole.CLIENT, enum: UserRole })
   public role: UserRole
@@ -41,7 +53,15 @@ export class User extends Typegoose {
   public comparePassword (this: Instance, password: string): boolean {
     return (
       this.password.hash ===
-      crypto.pbkdf2Sync(password, this.password.salt, this.password.iterations, 256, 'sha256').toString('hex')
+      crypto
+        .pbkdf2Sync(
+          password,
+          this.password.salt,
+          this.password.iterations,
+          256,
+          'sha256'
+        )
+        .toString('hex')
     )
   }
 
@@ -49,17 +69,22 @@ export class User extends Typegoose {
    * Statics
    */
   @staticMethod
-  public static generatePassword (password: string): Database.UserPassword {
+  public static generatePassword (password: string): UserPassword {
     const salt = crypto.randomBytes(64).toString('hex')
     return {
       salt,
-      hash: crypto.pbkdf2Sync(password, salt, 10000, 256, 'sha256').toString('hex'),
+      hash: crypto
+        .pbkdf2Sync(password, salt, 10000, 256, 'sha256')
+        .toString('hex'),
       iterations: 10000
     }
   }
 
   @staticMethod
-  public static findByUsername (this: ModelType<User> & typeof User, username: string): DocumentQuery<Instance | null, Document> {
+  public static findByUsername (
+    this: ModelType<User> & typeof User,
+    username: string
+  ): DocumentQuery<Instance | null, Document> {
     return this.findOne({ username })
   }
 }
