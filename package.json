@@ -41,6 +41,7 @@
     "eslint-plugin-standard": "^4.0.0",
     "gulp": "^4.0.2",
     "gulp-eslint": "^5.0.0",
+    "gulp-ts-alias": "^0.2.0",
     "gulp-typescript": "^5.0.1",
     "husky": "^2.3.0",
     "lint-staged": "^8.1.7",

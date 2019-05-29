@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const { src, dest, lastRun, watch, series } = require('gulp')
 const { createProject } = require('gulp-typescript')
+const alias = require('gulp-ts-alias')
 const { remove } = require('fs-extra')
 const eslint = require('gulp-eslint')
 
@@ -13,6 +14,7 @@ function clean () {
 
 function scripts () {
   return tsProject.src()
+    .pipe(alias({ configuration: tsProject.config }))
     .pipe(tsProject())
     .pipe(dest('dist'))
 }
