@@ -6,51 +6,6 @@ declare interface ReplaceFunction {
   (substring: string, ...args: any[]): string;
 }
 
-declare namespace Lib {
-  interface UploadFileOptions {
-    newName?: string;
-    path?: string;
-    absolute?: boolean;
-    folder?: boolean;
-    id?: false | string;
-  }
-  interface UploadFileResult {
-    id: false | string;
-    filename: string;
-    mimetype: string;
-    encoding: string;
-    path: string;
-    fullPath: string;
-    folderPath: string;
-  }
-
-  interface UploadImageOptions extends UploadFileOptions {
-    image?:
-    | false
-    | {
-      width?: number;
-      height?: number;
-      quality?: number;
-    };
-    thumbnail?:
-    | false
-    | {
-      width?: number;
-      height?: number;
-      quality?: number;
-    };
-    preview?:
-    | false
-    | {
-      width?: number;
-    };
-  }
-  interface UploadImageResult extends UploadFileResult {
-    thumbnail?: string;
-    preview?: string;
-  }
-}
-
 declare namespace Database {
   interface UserPassword {
     salt: string;
