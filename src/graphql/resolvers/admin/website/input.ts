@@ -20,16 +20,16 @@ export default class WebsiteInput {
   public url: string
 
   @TypeGQL.Field((): ReturnTypeFuncValue => [String])
-  public users: string[]
+  public users: string[] = []
 
-  @TypeGQL.Field()
-  public template: string
+  @TypeGQL.Field({ defaultValue: '' })
+  public template: string = ''
 
   @TypeGQL.Field((): ReturnTypeFuncValue => [WebsiteTemplateModule])
   public enabledModules: WebsiteTemplateModule[] = []
 
-  @TypeGQL.Field((): ReturnTypeFuncValue => WebsiteFieldInput)
-  public fields: WebsiteFieldInput[]
+  @TypeGQL.Field((): ReturnTypeFuncValue => [WebsiteFieldInput])
+  public fields: WebsiteFieldInput[] = []
 
   @TypeGQL.Field({ defaultValue: false })
   public enabled: boolean = false

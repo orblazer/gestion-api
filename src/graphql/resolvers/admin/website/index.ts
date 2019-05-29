@@ -37,8 +37,8 @@ export default class Website {
   @TypeGQL.Field((): ReturnTypeFuncValue => [WebsiteTemplateModule])
   public enabledModules: WebsiteTemplateModule[]
 
-  @TypeGQL.Field((): ReturnTypeFuncValue => [WebsiteField], { nullable: true })
-  public fields?: WebsiteField[]
+  @TypeGQL.Field((): ReturnTypeFuncValue => [WebsiteField])
+  public fields: WebsiteField[]
 
   @TypeGQL.Field({ defaultValue: false })
   public enabled: boolean
