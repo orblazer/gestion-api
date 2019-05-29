@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/indent */
-import { UserJWT } from 'src/database/User'
+import { UserJWT } from '@/database/admin/User'
 import { FastifyInstance } from 'src/server'
 import { Logger } from 'pino'
 

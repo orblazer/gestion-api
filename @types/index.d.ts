@@ -1,4 +1,4 @@
-import { UserJWT } from 'src/database/User'
+import { UserJWT } from '@/database/admin/User'
 
 declare interface ReplaceFunction {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

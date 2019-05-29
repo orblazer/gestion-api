@@ -1,5 +1,5 @@
 import { AuthenticationError, ForbiddenError } from 'apollo-server-core'
-import { UserJWT, UserRole } from '@/database/User'
+import { UserJWT, UserRole } from '@/database/admin/User'
 
 /**
  * Check if user is logged

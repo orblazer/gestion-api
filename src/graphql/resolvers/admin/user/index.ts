@@ -2,7 +2,7 @@ import 'reflect-metadata'
 import * as TypeGQL from 'type-graphql'
 import { ObjectId } from 'mongodb'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
-import { UserRole } from '@/database/User'
+import { UserRole } from '@/database/admin/User'
 import UserPassword from './userPassword.type'
 
 TypeGQL.registerEnumType(UserRole, {

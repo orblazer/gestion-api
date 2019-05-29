@@ -7,8 +7,8 @@ import { mergeDeep } from 'apollo-utilities'
 import {
   Instance as WebsiteTemplate,
   WebsiteTemplatePackager
-} from '../database/WebsiteTemplate'
-import { Instance as Website, WebsiteFTPProtocol } from '../database/Website'
+} from '../database/admin/WebsiteTemplate'
+import { Instance as Website, WebsiteFTPProtocol } from '../database/admin/Website'
 import { walk, normalize } from '../lib/directory'
 import FTPClient from './ftpClient'
 
