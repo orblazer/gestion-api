@@ -38,17 +38,19 @@ export const FieldValueScalar = new GraphQLScalarType({
     ) {
       return ast.value
     } else if (ast.kind === Kind.LIST) {
-      return ast.values.map((ast): number | boolean | string => {
-        if (
-          ast.kind === Kind.INT ||
-          ast.kind === Kind.FLOAT ||
-          ast.kind === Kind.BOOLEAN ||
-          ast.kind === Kind.STRING
-        ) {
-          return ast.value
+      return ast.values.map(
+        (ast): number | boolean | string => {
+          if (
+            ast.kind === Kind.INT ||
+            ast.kind === Kind.FLOAT ||
+            ast.kind === Kind.BOOLEAN ||
+            ast.kind === Kind.STRING
+          ) {
+            return ast.value
+          }
+          return null
         }
-        return null
-      })
+      )
     }
     return null
   }

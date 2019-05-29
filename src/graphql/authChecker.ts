@@ -1,29 +1,28 @@
 import { AuthChecker } from 'type-graphql'
 import { GraphqlContext } from '@types'
-import { isEditorKey } from './decorators/Auth'
+import { isEditorKey } from './decorators/HasKey'
 
 const customAuthCheck: AuthChecker<GraphqlContext> = (
   { context: { user, key } },
   roles
 ): boolean => {
-  // Is graphql editor
+  // if no user but graphql editor key
   if (user === false && isEditorKey(key)) {
     return true
   }
 
-  if (roles.length === 0) {
-    // if `@Authorized()`, check only is user exist
-    return user !== false
-  }
-
-  // there are some roles defined now
-
+  // if no user, restrict access
   if (!user) {
-    // and if no user, restrict access
     return false
   }
+
+  // grant access if no roles defined
+  if (roles.length === 0) {
+    return true
+  }
+
+  // grant access if the roles overlap
   if (roles.includes(user.role)) {
-    // grant access if the roles overlap
     return true
   }
 

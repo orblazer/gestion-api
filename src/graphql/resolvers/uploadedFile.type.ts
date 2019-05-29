@@ -1,9 +1,9 @@
 import 'reflect-metadata'
 import * as TypeGQL from 'type-graphql'
-import { Lib } from '@types'
+import { UploadFileResult } from '@/lib/uploadFile'
 
 @TypeGQL.ObjectType()
-export default class UploadedFile implements Lib.UploadFileResult {
+export default class UploadedFile implements UploadFileResult {
   @TypeGQL.Field()
   public id: string
 
