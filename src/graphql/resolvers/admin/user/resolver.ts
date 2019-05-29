@@ -5,8 +5,8 @@ import { ApolloError } from 'apollo-server-errors'
 import jwt from 'jsonwebtoken'
 import { DocumentQuery, Document } from 'mongoose'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
-import UserDB, { Instance as UserInstance, UserRole, UserJWT } from '../../../../database/User'
-import { HasKey } from '../../../decorators/Auth'
+import UserDB, { Instance as UserInstance, UserRole, UserJWT } from '@/database/User'
+import HasKey from '@/graphql/decorators/HasKey'
 import UserInput from './input'
 import UserAuth from './UserAuth.type'
 import User from '.'
@@ -15,6 +15,10 @@ import User from '.'
 export default class UserResolver {
   /**
    * Query
+   */
+
+  /**
+   * Get all users
    */
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
@@ -25,6 +29,11 @@ export default class UserResolver {
     })
   }
 
+  /**
+   * Get specific user
+   *
+   * @param id the user id
+   */
   @TypeGQL.Authorized()
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Query((): ReturnTypeFuncValue => User, { nullable: true })
@@ -32,6 +41,9 @@ export default class UserResolver {
     return UserDB.findById(id)
   }
 
+  /**
+   * Get the current user
+   */
   @TypeGQL.Authorized()
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Query((): ReturnTypeFuncValue => User)
@@ -42,23 +54,30 @@ export default class UserResolver {
   /**
    * Mutation
    */
+
+  /**
+   * Login an user
+   *
+   * @param username the user name
+   * @param password the user password
+   */
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => UserAuth)
   public async login (@TypeGQL.Arg('username') username: string, @TypeGQL.Arg('password') password: string): Promise<UserAuth> {
-    let user: UserInstance = null
-    try {
-      user = await UserDB.findByUsername(username)
-    } catch {
+    // Retrieve user from username
+    const user: UserInstance = await UserDB.findByUsername(username).catch((): UserInstance => {
       throw new ApolloError('Username not found', 'AUTH_ERROR')
-    }
+    })
     if (user === null) {
       throw new ApolloError('Username not found', 'AUTH_ERROR')
     }
 
+    // Check if is right password
     if (!user.comparePassword(password)) {
       throw new ApolloError('Invalid username or password', 'AUTH_ERROR')
     }
 
+    // Return user public data with JWT token
     const userJWT: UserJWT = {
       id: user._id,
       username: user.username,
@@ -73,12 +92,21 @@ export default class UserResolver {
     }
   }
 
+  /**
+   * Logout an user
+   * (NOTE: this make nothing)
+   */
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Boolean)
   public logout (): boolean {
     return true
   }
 
+  /**
+   * Create an new user
+   *
+   * @param input the user data
+   */
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => User)
@@ -93,6 +121,12 @@ export default class UserResolver {
     return user.save()
   }
 
+  /**
+   * Update an user
+   *
+   * @param id the user id
+   * @param input the new user data
+   */
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => User)
@@ -104,9 +138,14 @@ export default class UserResolver {
       delete input.password
     }
 
-    return UserDB.findByIdAndUpdate(id, input, { new: true })
+    return UserDB.findByIdAndUpdate(id, input)
   }
 
+  /**
+   * Delete an user
+   *
+   * @param id the user id
+   */
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => User)
