@@ -1,42 +1,76 @@
 import { AuthenticationError, ForbiddenError } from 'apollo-server-core'
-import { UserJWT, UserRole } from '../../database/User'
+import { UserJWT, UserRole } from '@/database/User'
 
-export function isAuth (user: UserJWT | false, throwErr: boolean = false): boolean {
-  if (throwErr) {
-    if (user === false) {
-      throw new AuthenticationError('Access denied! You are not logged !')
-    }
-    return true
-  } else {
-    return user !== false
-  }
-}
-
-export function hasPermission (
+/**
+ * Check if user is logged
+ *
+ * @param user the user info
+ * @param throwErr the error is throw
+ */
+function isAuth (
   user: UserJWT | false,
-  role: UserRole[] | UserRole = UserRole.CLIENT,
   throwErr: boolean = false
 ): boolean {
-  if (throwErr) {
-    if (user === false) {
-      throw new AuthenticationError('Access denied! You are not logged !')
-    }
-    if ((typeof user.role === 'string' && user.role !== role) || !role.includes(user.role)) {
-      throw new ForbiddenError("Access denied! You don't have permission for this action!")
-    }
-    return true
-  } else {
-    return user !== false ? (typeof user.role === 'string' && user.role === role) || role.includes(user.role) : false
+  if (user === false && throwErr) {
+    throw new AuthenticationError('Access denied! You are not logged !')
   }
+
+  return user !== false
 }
 
-export function hasKey (key: string, tryKey: string | true = null, throwErr: boolean = false): boolean {
-  if (throwErr) {
-    if ((tryKey === true && key === null) || key !== tryKey) {
-      throw new ForbiddenError("Access denied! You don't have permission for this action! (The key is incorrect)")
-    }
-    return true
-  } else {
-    return (tryKey === true && key !== null) || key === tryKey
+/**
+ * Check if user has role
+ *
+ * @param user the user data
+ * @param roles the roles
+ * @param throwErr thr error is throw
+ */
+function hasRole (
+  user: UserJWT | false,
+  roles: UserRole[] | UserRole = UserRole.CLIENT,
+  throwErr: boolean = false
+): boolean {
+  if (!isAuth(user, throwErr)) {
+    return false
   }
+  user = user as UserJWT // Fix type checking
+
+  if (
+    (typeof user.role === 'string' && user.role !== roles) ||
+    !roles.includes(user.role)
+  ) {
+    if (throwErr) {
+      throw new ForbiddenError(
+        "Access denied! You don't have permission for this action!"
+      )
+    }
+
+    return false
+  }
+
+  return true
+}
+
+function hasKey (
+  key: string,
+  tryKey: string | true = null,
+  throwErr: boolean = false
+): boolean {
+  if ((tryKey === true && key === null) || key !== tryKey) {
+    if (throwErr) {
+      throw new ForbiddenError(
+        "Access denied! You don't have permission for this action! (The key is incorrect)"
+      )
+    }
+
+    return false
+  }
+
+  return true
+}
+
+export default {
+  isAuth,
+  hasRole,
+  hasKey
 }
