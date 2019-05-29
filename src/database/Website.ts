@@ -45,10 +45,13 @@ export class Website extends Typegoose {
   public url: string
 
   @prop({ default: false })
-  public enabled: boolean = false
+  public enabled: boolean
 
-  @prop({ default: Date.now })
-  public createdAt: Date = new Date()
+  @prop({ default: new Date() })
+  public createdAt: Date
+
+  @prop({ default: new Date() })
+  public updatedAt: Date
 
   @prop({ ref: User })
   public authorId: Ref<User>

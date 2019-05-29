@@ -111,14 +111,12 @@ export default class UserResolver {
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => User)
   public createUser (@TypeGQL.Arg('input', (): ReturnTypeFuncValue => UserInput) input: UserInput): Promise<UserInstance> {
-    const user = new UserDB({
+    return new UserDB({
       displayName: input.displayName,
       username: input.username,
       password: UserDB.generatePassword(input.password),
       role: input.role
-    })
-
-    return user.save()
+    }).save()
   }
 
   /**
@@ -137,6 +135,9 @@ export default class UserResolver {
     } else {
       delete input.password
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(input as any).updatedAt = new Date()
 
     return UserDB.findByIdAndUpdate(id, input)
   }

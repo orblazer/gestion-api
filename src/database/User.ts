@@ -46,8 +46,11 @@ export class User extends Typegoose {
   @prop({ default: UserRole.CLIENT, enum: UserRole })
   public role: UserRole
 
-  @prop({ default: Date.now })
+  @prop({ default: new Date() })
   public createdAt: Date
+
+  @prop({ default: new Date() })
+  public updatedAt: Date
 
   @instanceMethod
   public comparePassword (this: Instance, password: string): boolean {

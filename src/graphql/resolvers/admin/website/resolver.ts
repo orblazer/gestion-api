@@ -104,7 +104,12 @@ export default class WebsiteResolver {
       template = await WebsiteTemplateDB.findById(input.template)
     }
 
-    const website = {
+    // Notify subscriber for new website
+    logger.debug('Creating website...')
+    await notify(WebsiteGenerationStatus.PROCESSING)
+
+    let step: WebsiteGenerationStep
+    return new WebsiteDB({
       _id,
       ftp: input.ftp,
       name: input.name,
@@ -117,14 +122,7 @@ export default class WebsiteResolver {
       enabledModules: input.enabledModules,
       fields: input.fields,
       directory: normalize(this.getPath() + '/' + _id)
-    }
-
-    // Notify subscriber for new website
-    logger.debug('Creating website...')
-    await notify(WebsiteGenerationStatus.PROCESSING)
-
-    let step: WebsiteGenerationStep
-    return new WebsiteDB(website).save().then(
+    }).save().then(
       async (data): Promise<WebsiteInstance> => {
         // Build website
         await notify(WebsiteGenerationStatus.PROCESSING, WebsiteGenerationStep.BUILD)
@@ -190,12 +188,11 @@ export default class WebsiteResolver {
       })
     }
 
-    ;(input as any).updatedAt = Date.now()
-
     // Apply modification
     Object.keys(input).forEach((key): void => {
       (website as any)[key] = (input as any)[key]
     })
+    website.updatedAt = new Date()
 
     // Retrieve template
     let template: null | WebsiteTemplateInstance = null
