@@ -8,6 +8,8 @@ export default class WebsiteField {
   @TypeGQL.Field()
   public name: string
 
-  @TypeGQL.Field((): ReturnTypeFuncValue => FieldValueScalar, { nullable: true })
+  @TypeGQL.Field((): ReturnTypeFuncValue => FieldValueScalar, {
+    nullable: true
+  })
   public value?: FieldValue
 }

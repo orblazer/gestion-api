@@ -1,30 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import 'reflect-metadata'
 import * as TypeGQL from 'type-graphql'
 import { ObjectId } from 'mongodb'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
 import { DocumentQuery, Document } from 'mongoose'
-import builder from '../../../../lib/builder'
-import { HasKey, isEditorKey } from '../../../../graphql/decorators/Auth'
-import * as Auth from '../../../../graphql/lib/Auth'
-import UserDB, {
-  Instance as UserInstance,
-  UserRole,
-  UserJWT,
-  User
-} from '../../../../database/User'
-import WebsiteDB, {
-  Instance as WebsiteInstance
-} from '../../../../database/Website'
-import { normalize } from '../../../../lib/directory'
+import builder from '@/lib/builder'
+import HasKey, { isEditorKey } from '@/graphql/decorators/HasKey'
+import Auth from '@/graphql/lib/Auth'
+import UserDB, { Instance as UserInstance, UserRole, UserJWT, User } from '@/database/User'
+import WebsiteDB, { Instance as WebsiteInstance } from '@/database/Website'
+import { normalize } from '@/lib/directory'
 import { PubSubConstants } from '../../pubSub'
+import WebsiteTemplateDB, { Instance as WebsiteTemplateInstance } from '@/database/WebsiteTemplate'
 import PaginationArgs from '../../paginationArgs'
-import WebsiteTemplateDB, {
-  Instance as WebsiteTemplateInstance
-} from '../../../../database/WebsiteTemplate'
-import WebsiteGeneration, {
-  WebsiteGenerationPayload, WebsiteGenerationStatus, WebsiteGenerationStep
-} from './websiteGeneration.type'
+import WebsiteGeneration, { WebsiteGenerationPayload, WebsiteGenerationStatus, WebsiteGenerationStep } from './websiteGeneration.type'
 import WebsiteInput from './input'
 import Website from '.'
 
@@ -33,13 +21,17 @@ export default class WebsiteResolver {
   /**
    * Query
    */
+
+  /**
+   * Get all websites
+   */
   @TypeGQL.Authorized()
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Query((): ReturnTypeFuncValue => [Website], { nullable: 'items' })
   public allWebsites (
     @TypeGQL.Ctx('user') user: UserJWT
   ): DocumentQuery<WebsiteInstance[], Document> {
-    const filter = Auth.hasPermission(user, UserRole.ADMIN)
+    const filter = Auth.hasRole(user, UserRole.ADMIN)
       ? {}
       : { users: user.id }
     return WebsiteDB.find(filter).sort({
@@ -47,6 +39,11 @@ export default class WebsiteResolver {
     })
   }
 
+  /**
+   * Get specific website
+   *
+   * @param id the website id
+   */
   @TypeGQL.Authorized()
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Query((): ReturnTypeFuncValue => Website, { nullable: true })
@@ -54,7 +51,7 @@ export default class WebsiteResolver {
     @TypeGQL.Arg('id') id: ObjectId,
       @TypeGQL.Ctx('user') user: UserJWT
   ): DocumentQuery<WebsiteInstance, Document> {
-    if (Auth.hasPermission(user, UserRole.ADMIN)) {
+    if (Auth.hasRole(user, UserRole.ADMIN)) {
       return WebsiteDB.findById(id)
     } else {
       return WebsiteDB.findOne({
@@ -66,6 +63,12 @@ export default class WebsiteResolver {
 
   /**
    * Mutation
+   */
+
+  /**
+   * Create an new website
+   *
+   * @param input the website data
    */
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
@@ -153,6 +156,12 @@ export default class WebsiteResolver {
     })
   }
 
+  /**
+   * Update an website
+   *
+   * @param id the website id
+   * @param input the new website data
+   */
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Website)
@@ -229,10 +238,18 @@ export default class WebsiteResolver {
     })
   }
 
+  /**
+   * Delete an website
+   *
+   * @param id the website id
+   */
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Website)
-  public async deleteWebsite (@TypeGQL.Arg('id') id: ObjectId, @TypeGQL.PubSub(PubSubConstants.WEBSITE_GENERATION) publish: TypeGQL.Publisher<WebsiteGenerationPayload>): Promise<WebsiteInstance> {
+  public async deleteWebsite (
+    @TypeGQL.Arg('id') id: ObjectId,
+    @TypeGQL.PubSub(PubSubConstants.WEBSITE_GENERATION) publish: TypeGQL.Publisher<WebsiteGenerationPayload>
+  ): Promise<WebsiteInstance> {
     const website = await WebsiteDB.findById(id)
     const logger = global.loggers.builder.child({
       website: {
@@ -277,6 +294,12 @@ export default class WebsiteResolver {
   /**
    * Subscription
    */
+
+  /**
+   * Subscription change when an website generate
+   *
+   * @param website the website id
+   */
   @TypeGQL.Subscription({
     topics: PubSubConstants.WEBSITE_GENERATION,
     filter ({ payload, args }: TypeGQL.ResolverFilterData<WebsiteGenerationPayload, {website: string}>): boolean {
@@ -304,12 +327,18 @@ export default class WebsiteResolver {
   /**
    * Field
    */
+
+  /**
+   * Retrieve user from ids
+   *
+   * @param offset the pagination offset
+   * @param limit the pagination limit
+   */
   @TypeGQL.FieldResolver((): ReturnTypeFuncValue => User)
   public users (
     @TypeGQL.Args() { offset, limit }: PaginationArgs,
       @TypeGQL.Root() website: WebsiteInstance
   ): DocumentQuery<UserInstance[], Document> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const options: any = { sort: { createdAt: 1 } }
     if (offset) {
       options.offset = offset

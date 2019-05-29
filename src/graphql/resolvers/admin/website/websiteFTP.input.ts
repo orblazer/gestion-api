@@ -1,7 +1,7 @@
 import 'reflect-metadata'
 import * as TypeGQL from 'type-graphql'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
-import { WebsiteFTPProtocol } from '../../../../database/Website'
+import { WebsiteFTPProtocol } from '@/database/Website'
 
 @TypeGQL.InputType()
 export default class WebsiteFTPInput {
