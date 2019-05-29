@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import fastifyPlugin from 'fastify-plugin'
 
 const symbolRequestTime = Symbol('RequestTimer')
@@ -61,7 +62,6 @@ export default fastifyPlugin(function (
   })
 
   // Hook to be triggered on request (start time)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fastify.addHook('onRequest', function (request: any, reply: any, next): void {
     // Store the start timer in nanoseconds resolution
     // istanbul ignore next
@@ -78,8 +78,12 @@ export default fastifyPlugin(function (
   })
 
   // Hook to be triggered just before response to be send
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fastify.addHook('onSend', function (request: any, reply: any, payload, next): void {
+  fastify.addHook('onSend', function (
+    request: any,
+    reply: any,
+    payload,
+    next
+  ): void {
     // check if Server-Timing need to be added
     const serverTiming = reply.res[symbolServerTiming]
     const headers = []

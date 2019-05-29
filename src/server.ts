@@ -5,7 +5,11 @@ import pino from 'pino'
 import responseTime from './plugins/responseTime'
 import uploads from './routes/uploads'
 
-export type FastifyInstance = Fastify.FastifyInstance<http.Server, http.IncomingMessage, http.ServerResponse>
+export type FastifyInstance = Fastify.FastifyInstance<
+http.Server,
+http.IncomingMessage,
+http.ServerResponse
+>
 
 export default function (): FastifyInstance {
   // Initialize

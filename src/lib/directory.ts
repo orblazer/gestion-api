@@ -2,13 +2,10 @@ import Path from 'path'
 import fs from 'fs-extra'
 
 export function normalize (path: string): string {
-  return (
-    Path.posix
-      .normalize(path)
-      // eslint-disable-next-line no-useless-escape
-      .split(/[\\\/]/g)
-      .join('/')
-  )
+  return Path.posix
+    .normalize(path)
+    .split(/[\\/]/g)
+    .join('/')
 }
 
 export async function walk (dir: string): Promise<string[]> {
