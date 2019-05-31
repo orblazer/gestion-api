@@ -348,6 +348,18 @@ export default class WebsiteResolver {
   }
 
   /**
+   * Retrieve template from id
+   */
+  @TypeGQL.FieldResolver((): ReturnTypeFuncValue => User)
+  public template (@TypeGQL.Root('template') templateId: ObjectId): DocumentQuery<WebsiteTemplateInstance, Document> {
+    if (templateId === null) {
+      return null
+    }
+
+    return WebsiteTemplateDB.findById(templateId)
+  }
+
+  /**
    * utils
    */
   private getPath (): string {
