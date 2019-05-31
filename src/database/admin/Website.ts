@@ -25,8 +25,8 @@ export interface WebsiteFTP {
 }
 
 export class Website extends Typegoose {
-  @prop({ default: null })
-  public ftp: WebsiteFTP = null
+  @prop({ required: true })
+  public ftp: WebsiteFTP
 
   @prop({ required: true })
   public name: string
@@ -59,7 +59,7 @@ export class Website extends Typegoose {
   @arrayProp({ itemsRef: User })
   public users: Ref<User>[]
 
-  @prop({ ref: WebsiteTemplate })
+  @prop({ ref: WebsiteTemplate, default: null })
   public template: Ref<WebsiteTemplate>
 
   @prop({ _id: false })

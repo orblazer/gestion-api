@@ -31,7 +31,7 @@ export default class Website {
   @TypeGQL.Field((): ReturnTypeFuncValue => [User])
   public users: User[]
 
-  @TypeGQL.Field((): ReturnTypeFuncValue => WebsiteTemplate)
+  @TypeGQL.Field((): ReturnTypeFuncValue => WebsiteTemplate, { nullable: true })
   public template: WebsiteTemplate
 
   @TypeGQL.Field((): ReturnTypeFuncValue => [WebsiteTemplateModule])

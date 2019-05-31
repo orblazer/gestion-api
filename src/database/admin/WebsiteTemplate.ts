@@ -76,8 +76,8 @@ export class WebsiteTemplate extends Typegoose {
   @prop()
   public preview: UploadImageResult
 
-  @prop({ default: null })
-  public build: WebsiteTemplateBuild = null
+  @prop({ required: true })
+  public build: WebsiteTemplateBuild
 }
 
 export type Instance = InstanceType<WebsiteTemplate>

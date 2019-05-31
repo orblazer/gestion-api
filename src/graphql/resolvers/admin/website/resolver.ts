@@ -118,7 +118,7 @@ export default class WebsiteResolver {
       enabled: input.enabled,
       authorId: user.id,
       users: input.users,
-      template: input.template,
+      template: template ? template._id : null,
       enabledModules: input.enabledModules,
       fields: input.fields,
       directory: normalize(this.getPath() + '/' + _id)
