@@ -1,6 +1,7 @@
 import { posix as Path } from 'path'
 import SFTPClient from 'ssh2-sftp-client'
 import _FTPClient from 'jsftp'
+import { readFile } from 'fs-extra'
 
 interface ErrnoError extends Error {
   code?: number;
@@ -153,10 +154,11 @@ export default class FTPClient {
     this.checkConnection()
 
     if (this.options.sftp) {
-      return this.getClient<SFTPClient>().put(localPath, remotePath)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return this.getClient<SFTPClient>().fastPut(localPath, remotePath) as any
     } else {
-      return new Promise((resolve, reject): void => {
-        this.getClient<_FTPClient>().put(localPath, remotePath, (err): void => {
+      return new Promise(async (resolve, reject): Promise<void> => {
+        this.getClient<_FTPClient>().put(await readFile(localPath), remotePath, (err): void => {
           if (err) {
             reject(err)
           } else {
@@ -182,7 +184,6 @@ export default class FTPClient {
     }
 
     if (this.options.sftp) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const exist = await this.getClient<SFTPClient>().exists(remotePath)
       return !!exist
     } else {
