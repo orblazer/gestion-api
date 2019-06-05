@@ -74,42 +74,13 @@ export default class WebsiteResolver {
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Website)
-  public async createWebsite (
+  public createWebsite (
     @TypeGQL.Arg('input', (): ReturnTypeFuncValue => WebsiteInput)
       input: WebsiteInput,
-      @TypeGQL.Ctx('user') user: UserJWT,
-      @TypeGQL.PubSub(PubSubConstants.WEBSITE_GENERATION) publish: TypeGQL.Publisher<WebsiteGenerationPayload>
+      @TypeGQL.Ctx('user') user: UserJWT
   ): Promise<WebsiteInstance> {
     const _id = new ObjectId()
-    const logger = global.loggers.graphql.child({
-      website: {
-        id: _id,
-        name: input.name
-      }
-    })
-    const start = new Date()
-    const notify = (status: WebsiteGenerationStatus, step?: WebsiteGenerationStep, reason: string = 'creating website', endDate?: Date): Promise<void> => {
-      return publish({
-        id: _id.toHexString(),
-        reason,
-        status,
-        step,
-        startDate: start,
-        endDate
-      })
-    }
 
-    // Retrieve template
-    let template: null | WebsiteTemplateInstance = null
-    if (input.template) {
-      template = await WebsiteTemplateDB.findById(input.template)
-    }
-
-    // Notify subscriber for new website
-    logger.debug('Creating website...')
-    await notify(WebsiteGenerationStatus.PROCESSING)
-
-    let step: WebsiteGenerationStep
     return new WebsiteDB({
       _id,
       ftp: input.ftp,
@@ -119,40 +90,11 @@ export default class WebsiteResolver {
       enabled: input.enabled,
       authorId: user.id,
       users: input.users,
-      template: template ? template._id : null,
+      template: input.template,
       enabledModules: input.enabledModules,
       fields: input.fields,
       directory: normalize(this.getPath() + '/' + _id)
-    }).save().then(
-      async (data): Promise<WebsiteInstance> => {
-        // Build website
-        await notify(WebsiteGenerationStatus.PROCESSING, WebsiteGenerationStep.BUILD)
-        await builder.build(data, template).catch((err): Promise<void> => {
-          step = WebsiteGenerationStep.BUILD
-          throw err
-        })
-
-        // Upload website
-        await notify(WebsiteGenerationStatus.PROCESSING, WebsiteGenerationStep.UPLOAD)
-        await builder.upload(data, template.build.directory).catch((err): Promise<void> => {
-          step = WebsiteGenerationStep.UPLOAD
-          throw err
-        })
-
-        // Notify subscriber for new website
-        const times = (Date.now() - start.getTime()) / 1000
-        logger.debug(`Website as been created, in ${times}s`)
-        await notify(WebsiteGenerationStatus.SUCCESS, undefined, undefined, new Date())
-
-        return data
-      }
-    ).catch(async (err: Error): Promise<WebsiteInstance> => {
-      // Notify subscriber for new website
-      logger.debug(`Website could not be created`)
-      await notify(WebsiteGenerationStatus.FAIL, step, `creating website (err: ${err.message})`, new Date())
-
-      throw err
-    })
+    }).save()
   }
 
   /**
@@ -166,28 +108,9 @@ export default class WebsiteResolver {
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Website)
   public async updateWebsite (
     @TypeGQL.Arg('id') id: ObjectId,
-      @TypeGQL.Arg('input', (): ReturnTypeFuncValue => WebsiteInput)
-      input: WebsiteInput,
-      @TypeGQL.PubSub(PubSubConstants.WEBSITE_GENERATION) publish: TypeGQL.Publisher<WebsiteGenerationPayload>
+      @TypeGQL.Arg('input', (): ReturnTypeFuncValue => WebsiteInput) input: WebsiteInput
   ): Promise<WebsiteInstance> {
     const website = await WebsiteDB.findById(id)
-    const logger = global.loggers.graphql.child({
-      website: {
-        id,
-        name: input.name || website.name
-      }
-    })
-    const start = new Date()
-    const notify = (status: WebsiteGenerationStatus, step?: WebsiteGenerationStep, reason: string = 'updating website', endDate?: Date): Promise<void> => {
-      return publish({
-        id: id.toHexString(),
-        reason,
-        status,
-        step,
-        startDate: start,
-        endDate
-      })
-    }
 
     // Apply modification
     Object.keys(input).forEach((key): void => {
@@ -195,45 +118,7 @@ export default class WebsiteResolver {
     })
     website.updatedAt = new Date()
 
-    // Retrieve template
-    let template: null | WebsiteTemplateInstance = null
-    if (website.template) {
-      template = await WebsiteTemplateDB.findById(website.template)
-    }
-
-    // Notify subscriber for update website
-    logger.debug('Updating website...')
-    await notify(WebsiteGenerationStatus.PROCESSING)
-
-    let step: WebsiteGenerationStep
-    return website.save().then(async (): Promise<WebsiteInstance> => {
-      // Build website
-      await notify(WebsiteGenerationStatus.PROCESSING, WebsiteGenerationStep.BUILD)
-      await builder.build(website, template).catch((err): Promise<void> => {
-        step = WebsiteGenerationStep.BUILD
-        throw err
-      })
-
-      // Upload website
-      await notify(WebsiteGenerationStatus.PROCESSING, WebsiteGenerationStep.UPLOAD)
-      await builder.upload(website, template.build.directory).catch((err): Promise<void> => {
-        step = WebsiteGenerationStep.UPLOAD
-        throw err
-      })
-
-      // Notify subscriber for update website
-      const times = (Date.now() - start.getTime()) / 1000
-      logger.debug(`Website as been updated, in ${times}s`)
-      await notify(WebsiteGenerationStatus.SUCCESS, undefined, undefined, new Date())
-
-      return website
-    }).catch(async (err: Error): Promise<WebsiteInstance> => {
-      // Notify subscriber for update website
-      logger.debug(`Website could not be updated`)
-      await notify(WebsiteGenerationStatus.FAIL, step, `updating website (err: ${err.message})`, new Date())
-
-      throw err
-    })
+    return website.save()
   }
 
   /**
@@ -299,6 +184,7 @@ export default class WebsiteResolver {
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Website, { nullable: true })
   public async buildWebsite (
     @TypeGQL.Arg('id') id: ObjectId,
+      @TypeGQL.Arg('reason', { defaultValue: 'force' }) reason: string = 'force',
       @TypeGQL.PubSub(PubSubConstants.WEBSITE_GENERATION) publish: TypeGQL.Publisher<WebsiteGenerationPayload>
   ): Promise<WebsiteInstance> {
     const website = await WebsiteDB.findById(id)
@@ -326,7 +212,7 @@ export default class WebsiteResolver {
       template = await WebsiteTemplateDB.findById(website.template)
     }
 
-    logger.debug('Building website...')
+    logger.debug(`Building ans uploading website (from: ${reason})...`)
 
     let step: WebsiteGenerationStep
     try {
@@ -345,15 +231,15 @@ export default class WebsiteResolver {
       })
     } catch (err) {
       // Notify subscriber for new website
-      logger.debug(`Website could not be builded`)
-      await notify(WebsiteGenerationStatus.FAIL, step, `building website (err: ${err.message})`, new Date())
+      logger.debug(`Website could not be builded and uploaded`)
+      await notify(WebsiteGenerationStatus.FAIL, step, `building and uploading (from: ${reason}) website (err: ${err.message})`, new Date())
 
       throw err
     }
 
     // Notify subscriber for new website
     const times = (Date.now() - start.getTime()) / 1000
-    logger.debug(`Website as been builded, in ${times}s`)
+    logger.debug(`Website as been builded and uploaded (from: ${reason}), in ${times}s`)
     await notify(WebsiteGenerationStatus.SUCCESS, undefined, undefined, new Date())
 
     return website
