@@ -55,6 +55,7 @@ export default class WebsiteResolver {
       return WebsiteDB.findById(id)
     } else {
       return WebsiteDB.findOne({
+        _id: id,
         users: user.id,
         enabled: true
       })
@@ -286,6 +287,76 @@ export default class WebsiteResolver {
 
       throw err
     })
+  }
+
+  /**
+   * Build an website
+   *
+   * @param id the website id
+   */
+  @TypeGQL.Authorized()
+  @HasKey((): string => process.env.PANEL_KEY)
+  @TypeGQL.Mutation((): ReturnTypeFuncValue => Website, { nullable: true })
+  public async buildWebsite (
+    @TypeGQL.Arg('id') id: ObjectId,
+      @TypeGQL.PubSub(PubSubConstants.WEBSITE_GENERATION) publish: TypeGQL.Publisher<WebsiteGenerationPayload>
+  ): Promise<WebsiteInstance> {
+    const website = await WebsiteDB.findById(id)
+    const logger = global.loggers.graphql.child({
+      website: {
+        id,
+        name: website.name
+      }
+    })
+    const start = new Date()
+    const notify = (status: WebsiteGenerationStatus, step?: WebsiteGenerationStep, reason: string = 'building website', endDate?: Date): Promise<void> => {
+      return publish({
+        id: id.toHexString(),
+        reason,
+        status,
+        step,
+        startDate: start,
+        endDate
+      })
+    }
+
+    // Retrieve template
+    let template: null | WebsiteTemplateInstance = null
+    if (website.template) {
+      template = await WebsiteTemplateDB.findById(website.template)
+    }
+
+    logger.debug('Building website...')
+
+    let step: WebsiteGenerationStep
+    try {
+    // Build website
+      await notify(WebsiteGenerationStatus.PROCESSING, WebsiteGenerationStep.BUILD)
+      await builder.build(website, template).catch((err): Promise<void> => {
+        step = WebsiteGenerationStep.BUILD
+        throw err
+      })
+
+      // Upload website
+      await notify(WebsiteGenerationStatus.PROCESSING, WebsiteGenerationStep.UPLOAD)
+      await builder.upload(website, template.build.directory).catch((err): Promise<void> => {
+        step = WebsiteGenerationStep.UPLOAD
+        throw err
+      })
+    } catch (err) {
+      // Notify subscriber for new website
+      logger.debug(`Website could not be builded`)
+      await notify(WebsiteGenerationStatus.FAIL, step, `building website (err: ${err.message})`, new Date())
+
+      throw err
+    }
+
+    // Notify subscriber for new website
+    const times = (Date.now() - start.getTime()) / 1000
+    logger.debug(`Website as been builded, in ${times}s`)
+    await notify(WebsiteGenerationStatus.SUCCESS, undefined, undefined, new Date())
+
+    return website
   }
 
   /**
