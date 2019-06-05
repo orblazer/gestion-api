@@ -33,7 +33,7 @@ TypeGQL.registerEnumType(WebsiteGenerationStep, {
 
 @TypeGQL.ObjectType()
 export default class WebsiteGeneration {
-  @TypeGQL.Field((): ReturnTypeFuncValue => TypeGQL.ID)
+  @TypeGQL.Field()
   public id: string
 
   @TypeGQL.Field((): ReturnTypeFuncValue => WebsiteGenerationStatus)
