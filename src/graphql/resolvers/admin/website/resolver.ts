@@ -256,12 +256,22 @@ export default class WebsiteResolver {
    */
   @TypeGQL.Subscription({
     topics: PubSubConstants.WEBSITE_GENERATION,
-    filter ({ payload, args }: TypeGQL.ResolverFilterData<WebsiteGenerationPayload, {id: string}>): boolean {
-      return isEditorKey(args.id) || payload.id === args.id
+    filter ({ payload, args }: TypeGQL.ResolverFilterData<WebsiteGenerationPayload, {ids: string[]}>): boolean {
+      if (args.ids.length === 1 && isEditorKey(args.ids[0])) {
+        return true
+      }
+
+      for (const id of args.ids) {
+        if (payload.id === id) {
+          return true
+        }
+      }
+
+      return false
     }
   })
-  public websiteGeneration (
-    @TypeGQL.Arg('id') id: string,
+  public websitesGeneration (
+    @TypeGQL.Arg('ids', (): ReturnTypeFuncValue => [String]) ids: string[],
     @TypeGQL.Root() payload: WebsiteGenerationPayload
   ): WebsiteGeneration {
     const logger = global.loggers.builder.child({
