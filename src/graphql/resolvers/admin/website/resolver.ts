@@ -162,7 +162,7 @@ export default class WebsiteResolver {
       // Notify subscriber for delete website
       const times = (Date.now() - start.getTime()) / 1000
       logger.debug(`Website as been deleted, in ${times}s`)
-      await notify(WebsiteGenerationStatus.SUCCESS, WebsiteGenerationStep.CLEAN, undefined, new Date())
+      await notify(WebsiteGenerationStatus.SUCCESS, WebsiteGenerationStep.IDLE, undefined, new Date())
 
       return website
     }).catch(async (err: Error): Promise<WebsiteInstance> => {
@@ -240,7 +240,7 @@ export default class WebsiteResolver {
     // Notify subscriber for new website
     const times = (Date.now() - start.getTime()) / 1000
     logger.debug(`Website as been builded and uploaded (from: ${reason}), in ${times}s`)
-    await notify(WebsiteGenerationStatus.SUCCESS, undefined, undefined, new Date())
+    await notify(WebsiteGenerationStatus.SUCCESS, WebsiteGenerationStep.IDLE, undefined, new Date())
 
     return website
   }

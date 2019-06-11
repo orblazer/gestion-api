@@ -12,12 +12,14 @@ export interface WebsiteGenerationPayload {
 }
 
 export enum WebsiteGenerationStatus {
+  IDLE,
   PROCESSING,
   FAIL,
   SUCCESS
 }
 
 export enum WebsiteGenerationStep {
+  IDLE,
   BUILD,
   UPLOAD,
   CLEAN
