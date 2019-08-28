@@ -1,12 +1,5 @@
 import crypto from 'crypto'
-import {
-  prop,
-  Typegoose,
-  staticMethod,
-  instanceMethod,
-  ModelType,
-  InstanceType
-} from 'typegoose'
+import { prop, Typegoose, staticMethod, instanceMethod, ModelType, InstanceType } from 'typegoose'
 import mongoose, { DocumentQuery, Document } from 'mongoose'
 import { ObjectId } from 'mongodb'
 import isEmail from 'validator/lib/isEmail'
@@ -19,7 +12,7 @@ export interface UserPassword {
 
 export enum UserRole {
   CLIENT = 'client',
-  ADMIN = 'admin'
+  ADMIN = 'admin',
 }
 
 export interface UserJWT {
@@ -56,15 +49,7 @@ export class User extends Typegoose {
   public comparePassword (this: Instance, password: string): boolean {
     return (
       this.password.hash ===
-      crypto
-        .pbkdf2Sync(
-          password,
-          this.password.salt,
-          this.password.iterations,
-          256,
-          'sha256'
-        )
-        .toString('hex')
+      crypto.pbkdf2Sync(password, this.password.salt, this.password.iterations, 256, 'sha256').toString('hex')
     )
   }
 
@@ -76,9 +61,7 @@ export class User extends Typegoose {
     const salt = crypto.randomBytes(64).toString('hex')
     return {
       salt,
-      hash: crypto
-        .pbkdf2Sync(password, salt, 10000, 256, 'sha256')
-        .toString('hex'),
+      hash: crypto.pbkdf2Sync(password, salt, 10000, 256, 'sha256').toString('hex'),
       iterations: 10000
     }
   }

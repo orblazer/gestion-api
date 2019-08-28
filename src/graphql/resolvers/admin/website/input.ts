@@ -1,9 +1,9 @@
 import 'reflect-metadata'
 import * as TypeGQL from 'type-graphql'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
-import { WebsiteTemplateModule } from '@/database/admin/WebsiteTemplate'
 import WebsiteFieldInput from './websiteField.input'
 import WebsiteFTPInput from './websiteFTP.input'
+import { WebsiteTemplateModule } from '@/database/admin/WebsiteTemplate'
 
 @TypeGQL.InputType()
 export default class WebsiteInput {

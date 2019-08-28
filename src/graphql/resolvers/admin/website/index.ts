@@ -2,11 +2,11 @@ import 'reflect-metadata'
 import * as TypeGQL from 'type-graphql'
 import { ObjectId } from 'mongodb'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
-import { WebsiteTemplateModule } from '@/database/admin/WebsiteTemplate'
 import User from '../user'
 import WebsiteTemplate from '../websiteTemplate'
 import WebsiteField from './websiteField.type'
 import WebsiteFTP from './websiteFTP.type'
+import { WebsiteTemplateModule } from '@/database/admin/WebsiteTemplate'
 
 @TypeGQL.ObjectType()
 export default class Website {

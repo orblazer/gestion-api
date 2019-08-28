@@ -2,14 +2,12 @@ import * as TypeGQL from 'type-graphql'
 import { ObjectId } from 'mongodb'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
 import { DocumentQuery, Document, Model } from 'mongoose'
-import WebsiteDB, {
-  Instance as WebsiteInstance
-} from '@/database/admin/Website'
-import UserDB, { Instance as UserInstance } from '@/database/admin/User'
 import Website from '../admin/website'
 import User from '../admin/user'
 import PaginationArgs from '../paginationArgs'
 import Content from '.'
+import UserDB, { Instance as UserInstance } from '@/database/admin/User'
+import WebsiteDB, { Instance as WebsiteInstance } from '@/database/admin/Website'
 import HasKey from '@/graphql/decorators/HasKey'
 
 export default function createBaseResolver<D extends Document> (
@@ -38,9 +36,7 @@ export default function createBaseResolver<D extends Document> (
       nullable: true,
       name: `all${suffix.plural}`
     })
-    public all (
-      @TypeGQL.Arg('website') website: ObjectId
-    ): DocumentQuery<D[], Document> {
+    public all (@TypeGQL.Arg('website') website: ObjectId): DocumentQuery<D[], Document> {
       return databaseCls.find({ websiteId: website }).sort({
         createdAt: -1
       })
@@ -58,10 +54,7 @@ export default function createBaseResolver<D extends Document> (
       nullable: true,
       name: `get${suffix.single}`
     })
-    public get (
-      @TypeGQL.Arg('website') website: ObjectId,
-        @TypeGQL.Arg('id') id: ObjectId
-    ): DocumentQuery<D, Document> {
+    public get (@TypeGQL.Arg('website') website: ObjectId, @TypeGQL.Arg('id') id: ObjectId): DocumentQuery<D, Document> {
       return databaseCls.findOne({ _id: id, websiteId: website })
     }
 
@@ -79,7 +72,7 @@ export default function createBaseResolver<D extends Document> (
     })
     public getVisibles (
       @TypeGQL.Args() { offset, limit }: PaginationArgs,
-        @TypeGQL.Ctx('key') key: string
+      @TypeGQL.Ctx('key') key: string
     ): DocumentQuery<D[], Document> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const options: any = { sort: { createdAt: 1 } }
@@ -101,9 +94,7 @@ export default function createBaseResolver<D extends Document> (
      * Retrieve website from id
      */
     @TypeGQL.FieldResolver((): ReturnTypeFuncValue => Website)
-    public website (
-      @TypeGQL.Root('websiteId') websiteId: ObjectId
-    ): DocumentQuery<WebsiteInstance, Document> {
+    public website (@TypeGQL.Root('websiteId') websiteId: ObjectId): DocumentQuery<WebsiteInstance, Document> {
       return WebsiteDB.findById(websiteId)
     }
 
@@ -111,9 +102,7 @@ export default function createBaseResolver<D extends Document> (
      * Retrieve author from id
      */
     @TypeGQL.FieldResolver((): ReturnTypeFuncValue => User)
-    public author (
-      @TypeGQL.Root('authorId') authorId: ObjectId
-    ): DocumentQuery<UserInstance, Document> {
+    public author (@TypeGQL.Root('authorId') authorId: ObjectId): DocumentQuery<UserInstance, Document> {
       return UserDB.findById(authorId)
     }
   }

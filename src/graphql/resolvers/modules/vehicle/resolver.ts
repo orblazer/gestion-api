@@ -3,17 +3,21 @@ import * as TypeGQL from 'type-graphql'
 import fs from 'fs-extra'
 import { ObjectId } from 'mongodb'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
-import uploadImage, { UploadImageOptions } from '@/lib/uploadImage'
-import { normalize } from '@/lib/directory'
-import { UserJWT } from '@/database/admin/User'
-import VehicleDB, { Instance as VehicleInstance } from '@/database/modules/Vehicle'
 import HasKey from '../../../decorators/HasKey'
 import createBaseResolver from '../../content/resolver'
 import VehicleInput from './input'
 import Vehicle from '.'
+import uploadImage, { UploadImageOptions } from '@/lib/uploadImage'
+import { normalize } from '@/lib/directory'
+import { UserJWT } from '@/database/admin/User'
+import VehicleDB, { Instance as VehicleInstance } from '@/database/modules/Vehicle'
 import { TextLocalized } from '@types'
 
-const ContentBaseResolver = createBaseResolver<VehicleInstance>({ plural: 'Vehicles', single: 'Vehicle' }, Vehicle, VehicleDB)
+const ContentBaseResolver = createBaseResolver<VehicleInstance>(
+  { plural: 'Vehicles', single: 'Vehicle' },
+  Vehicle,
+  VehicleDB
+)
 const subFolder = 'vehicles'
 const imageOptions: UploadImageOptions = {
   image: {
@@ -50,10 +54,7 @@ export default class VehicleResolver extends ContentBaseResolver {
     return new VehicleDB({
       websiteId: website,
       title: input.title,
-      image: await uploadImage(
-        input.image,
-        Object.assign({}, imageOptions, { path: this.getFolder(website) })
-      ),
+      image: await uploadImage(input.image, Object.assign({}, imageOptions, { path: this.getFolder(website) })),
       description: input.description,
       visible: input.visible,
       authorId: user.id,
@@ -99,7 +100,10 @@ export default class VehicleResolver extends ContentBaseResolver {
   @TypeGQL.Authorized()
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Vehicle)
-  public async deleteVehicle (@TypeGQL.Arg('website') website: ObjectId, @TypeGQL.Arg('id') id: ObjectId): Promise<VehicleInstance> {
+  public async deleteVehicle (
+    @TypeGQL.Arg('website') website: ObjectId,
+    @TypeGQL.Arg('id') id: ObjectId
+  ): Promise<VehicleInstance> {
     const vehicle = await VehicleDB.findOne({ _id: id, websiteId: website })
     await fs.remove(normalize(`${this.getFolder(website)}/${vehicle.image.id}`))
 

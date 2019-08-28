@@ -1,9 +1,9 @@
 import { Typegoose, prop, Ref, InstanceType } from 'typegoose'
 import mongoose from 'mongoose'
+import { User } from './User'
 import { Lang } from '@/graphql/resolvers/textLocalized'
 import { JSONType } from '@/graphql/resolvers/scalars/JSON'
 import { FieldValue } from '@/graphql/resolvers/scalars/FieldValue'
-import { User } from './User'
 import { UploadFileResult } from '@/lib/uploadFile'
 import { UploadImageResult } from '@/lib/uploadImage'
 
@@ -25,12 +25,12 @@ export enum WebsiteTemplateModule {
   BLOG_CATEGORIES = 'BLOG_CATEGORIES',
   SERVICES = 'SERVICES',
   VTC_VEHICLES = 'VTC_VEHICLES',
-  REST_MENU = 'REST_MENU'
+  REST_MENU = 'REST_MENU',
 }
 
 export enum WebsiteTemplatePackager {
   YARN = 'YARN',
-  NPM = 'NPM'
+  NPM = 'NPM',
 }
 
 export interface WebsiteTemplateBuild {

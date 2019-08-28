@@ -1,7 +1,7 @@
 import { Typegoose, Ref, prop } from 'typegoose'
-import { TextLocalized } from '@types'
 import { Website } from './admin/Website'
 import { User } from './admin/User'
+import { TextLocalized } from '@types'
 
 export default class Content extends Typegoose {
   @prop({ required: true, ref: Website })

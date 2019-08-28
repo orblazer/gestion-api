@@ -3,7 +3,7 @@ import * as TypeGQL from 'type-graphql'
 
 export enum Lang {
   FR = 'FR',
-  EN = 'EN'
+  EN = 'EN',
 }
 TypeGQL.registerEnumType(Lang, {
   name: 'Lang'

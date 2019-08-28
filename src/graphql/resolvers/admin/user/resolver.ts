@@ -5,11 +5,11 @@ import { ApolloError } from 'apollo-server-errors'
 import jwt from 'jsonwebtoken'
 import { DocumentQuery, Document } from 'mongoose'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
-import UserDB, { Instance as UserInstance, UserRole, UserJWT } from '@/database/admin/User'
-import HasKey from '@/graphql/decorators/HasKey'
 import UserInput from './input'
 import UserAuth from './UserAuth.type'
 import User from '.'
+import HasKey from '@/graphql/decorators/HasKey'
+import UserDB, { Instance as UserInstance, UserRole, UserJWT } from '@/database/admin/User'
 
 @TypeGQL.Resolver(User)
 export default class UserResolver {
@@ -63,11 +63,16 @@ export default class UserResolver {
    */
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => UserAuth)
-  public async login (@TypeGQL.Arg('username') username: string, @TypeGQL.Arg('password') password: string): Promise<UserAuth> {
+  public async login (
+    @TypeGQL.Arg('username') username: string,
+    @TypeGQL.Arg('password') password: string
+  ): Promise<UserAuth> {
     // Retrieve user from username
-    const user: UserInstance = await UserDB.findByUsername(username).catch((): UserInstance => {
-      throw new ApolloError('Username not found', 'AUTH_ERROR')
-    })
+    const user: UserInstance = await UserDB.findByUsername(username).catch(
+      (): UserInstance => {
+        throw new ApolloError('Username not found', 'AUTH_ERROR')
+      }
+    )
     if (user === null) {
       throw new ApolloError('Username not found', 'AUTH_ERROR')
     }
@@ -110,7 +115,9 @@ export default class UserResolver {
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => User)
-  public createUser (@TypeGQL.Arg('input', (): ReturnTypeFuncValue => UserInput) input: UserInput): Promise<UserInstance> {
+  public createUser (
+    @TypeGQL.Arg('input', (): ReturnTypeFuncValue => UserInput) input: UserInput
+  ): Promise<UserInstance> {
     return new UserDB({
       displayName: input.displayName,
       username: input.username,
@@ -128,7 +135,10 @@ export default class UserResolver {
   @TypeGQL.Authorized(UserRole.ADMIN)
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Mutation((): ReturnTypeFuncValue => User)
-  public updateUser (@TypeGQL.Arg('id') id: ObjectId, @TypeGQL.Arg('input', (): ReturnTypeFuncValue => UserInput) input: UserInput): DocumentQuery<UserInstance, Document> {
+  public updateUser (
+    @TypeGQL.Arg('id') id: ObjectId,
+    @TypeGQL.Arg('input', (): ReturnTypeFuncValue => UserInput) input: UserInput
+  ): DocumentQuery<UserInstance, Document> {
     if (input.password !== '') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       input.password = UserDB.generatePassword(input.password) as any

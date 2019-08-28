@@ -31,7 +31,9 @@ export default async function (fastify: FastifyInstance): Promise<void> {
       })
     }
   })
-  if (typeof schema === 'undefined') { return }
+  if (typeof schema === 'undefined') {
+    return
+  }
 
   const server = new ApolloServer({
     schema,

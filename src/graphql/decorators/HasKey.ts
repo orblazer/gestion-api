@@ -7,10 +7,7 @@ import { MethodAndPropDecorator } from 'type-graphql/dist/decorators/types'
  * @param key the key
  */
 export function isEditorKey (key: string): boolean {
-  if (
-    key === 'admin:yc6p39p7BYFx7QAiYqzJ29Ku2Hr46fS2' &&
-    !global.isProduction
-  ) {
+  if (key === 'admin:yc6p39p7BYFx7QAiYqzJ29Ku2Hr46fS2' && !global.isProduction) {
     return true
   }
 }

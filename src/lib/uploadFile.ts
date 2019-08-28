@@ -29,13 +29,7 @@ export interface UploadFileResult {
 export default async function uploadFile (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   upload: any,
-  {
-    newName,
-    path = process.env.UPLOAD_DIR,
-    absolute = false,
-    folder = false,
-    id = generate()
-  }: UploadFileOptions
+  { newName, path = process.env.UPLOAD_DIR, absolute = false, folder = false, id = generate() }: UploadFileOptions
 ): Promise<UploadFileResult> {
   const file = await upload
   const stream = file.createReadStream()
@@ -56,11 +50,7 @@ export default async function uploadFile (
 
   // Get path of output file
   let filePath =
-    id !== false
-      ? folder
-        ? `${path}/${id}/${filename}`
-        : `${path}/${id}-${filename}`
-      : `${path}/${filename}`
+    id !== false ? (folder ? `${path}/${id}/${filename}` : `${path}/${id}-${filename}`) : `${path}/${filename}`
   if (absolute) {
     filePath = Path.resolve(filePath)
   } else {
@@ -73,36 +63,29 @@ export default async function uploadFile (
   await fs.ensureDir(folderPath)
 
   // Write file from upload stream
-  return new Promise(
-    (resolve, reject): void => {
-      stream
-        .pipe(fs.createWriteStream(fullPath))
-        .on(
-          'error',
-          (err: Error): void => {
-            if (stream.truncated) {
-              // Delete the truncated file
-              fs.remove(folderPath)
-                .then((): void => reject(err))
-                .catch((): void => reject(err))
-            } else {
-              reject(err)
-            }
-          }
-        )
-        .on(
-          'finish',
-          (): void =>
-            resolve({
-              id,
-              filename,
-              mimetype: file.mimetype,
-              encoding: file.encoding,
-              path: filePath,
-              fullPath,
-              folderPath
-            })
-        )
-    }
-  )
+  return new Promise((resolve, reject): void => {
+    stream
+      .pipe(fs.createWriteStream(fullPath))
+      .on('error', (err: Error): void => {
+        if (stream.truncated) {
+          // Delete the truncated file
+          fs.remove(folderPath)
+            .then((): void => reject(err))
+            .catch((): void => reject(err))
+        } else {
+          reject(err)
+        }
+      })
+      .on('finish', (): void =>
+        resolve({
+          id,
+          filename,
+          mimetype: file.mimetype,
+          encoding: file.encoding,
+          path: filePath,
+          fullPath,
+          folderPath
+        })
+      )
+  })
 }

@@ -3,18 +3,22 @@ import * as TypeGQL from 'type-graphql'
 import { ObjectId } from 'mongodb'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
 import { DocumentQuery, Document } from 'mongoose'
+import { PubSubConstants } from '../../pubSub'
+import PaginationArgs from '../../paginationArgs'
+import WebsiteGeneration, {
+  WebsiteGenerationPayload,
+  WebsiteGenerationStatus,
+  WebsiteGenerationStep
+} from './websiteGeneration.type'
+import WebsiteInput from './input'
+import Website from '.'
 import builder from '@/lib/builder'
 import HasKey, { isEditorKey } from '@/graphql/decorators/HasKey'
 import Auth from '@/graphql/lib/Auth'
 import UserDB, { Instance as UserInstance, UserRole, UserJWT, User } from '@/database/admin/User'
 import WebsiteDB, { Instance as WebsiteInstance } from '@/database/admin/Website'
 import { normalize } from '@/lib/directory'
-import { PubSubConstants } from '../../pubSub'
 import WebsiteTemplateDB, { Instance as WebsiteTemplateInstance } from '@/database/admin/WebsiteTemplate'
-import PaginationArgs from '../../paginationArgs'
-import WebsiteGeneration, { WebsiteGenerationPayload, WebsiteGenerationStatus, WebsiteGenerationStep } from './websiteGeneration.type'
-import WebsiteInput from './input'
-import Website from '.'
 
 @TypeGQL.Resolver(Website)
 export default class WebsiteResolver {
@@ -28,12 +32,8 @@ export default class WebsiteResolver {
   @TypeGQL.Authorized()
   @HasKey((): string => process.env.PANEL_KEY)
   @TypeGQL.Query((): ReturnTypeFuncValue => [Website], { nullable: 'items' })
-  public allWebsites (
-    @TypeGQL.Ctx('user') user: UserJWT
-  ): DocumentQuery<WebsiteInstance[], Document> {
-    const filter = Auth.hasRole(user, UserRole.ADMIN)
-      ? {}
-      : { users: user.id }
+  public allWebsites (@TypeGQL.Ctx('user') user: UserJWT): DocumentQuery<WebsiteInstance[], Document> {
+    const filter = Auth.hasRole(user, UserRole.ADMIN) ? {} : { users: user.id }
     return WebsiteDB.find(filter).sort({
       createdAt: -1
     })
@@ -49,7 +49,7 @@ export default class WebsiteResolver {
   @TypeGQL.Query((): ReturnTypeFuncValue => Website, { nullable: true })
   public getWebsite (
     @TypeGQL.Arg('id') id: ObjectId,
-      @TypeGQL.Ctx('user') user: UserJWT
+    @TypeGQL.Ctx('user') user: UserJWT
   ): DocumentQuery<WebsiteInstance, Document> {
     if (Auth.hasRole(user, UserRole.ADMIN)) {
       return WebsiteDB.findById(id)
@@ -77,7 +77,7 @@ export default class WebsiteResolver {
   public createWebsite (
     @TypeGQL.Arg('input', (): ReturnTypeFuncValue => WebsiteInput)
       input: WebsiteInput,
-      @TypeGQL.Ctx('user') user: UserJWT
+    @TypeGQL.Ctx('user') user: UserJWT
   ): Promise<WebsiteInstance> {
     const _id = new ObjectId()
 
@@ -108,13 +108,14 @@ export default class WebsiteResolver {
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Website)
   public async updateWebsite (
     @TypeGQL.Arg('id') id: ObjectId,
-      @TypeGQL.Arg('input', (): ReturnTypeFuncValue => WebsiteInput) input: WebsiteInput
+    @TypeGQL.Arg('input', (): ReturnTypeFuncValue => WebsiteInput)
+      input: WebsiteInput
   ): Promise<WebsiteInstance> {
     const website = await WebsiteDB.findById(id)
 
     // Apply modification
     Object.keys(input).forEach((key): void => {
-      (website as any)[key] = (input as any)[key]
+      ;(website as any)[key] = (input as any)[key]
     })
     website.updatedAt = new Date()
 
@@ -131,7 +132,8 @@ export default class WebsiteResolver {
   @TypeGQL.Mutation((): ReturnTypeFuncValue => Website)
   public async deleteWebsite (
     @TypeGQL.Arg('id') id: ObjectId,
-    @TypeGQL.PubSub(PubSubConstants.WEBSITE_GENERATION) publish: TypeGQL.Publisher<WebsiteGenerationPayload>
+    @TypeGQL.PubSub(PubSubConstants.WEBSITE_GENERATION)
+      publish: TypeGQL.Publisher<WebsiteGenerationPayload>
   ): Promise<WebsiteInstance> {
     const website = await WebsiteDB.findById(id)
     const logger = global.loggers.builder.child({
@@ -141,7 +143,12 @@ export default class WebsiteResolver {
       }
     })
     const start = new Date()
-    const notify = (status: WebsiteGenerationStatus, step?: WebsiteGenerationStep, reason: string = 'deleting website', endDate?: Date): Promise<void> => {
+    const notify = (
+      status: WebsiteGenerationStatus,
+      step?: WebsiteGenerationStep,
+      reason = 'deleting website',
+      endDate?: Date
+    ): Promise<void> => {
       return publish({
         id: id.toHexString(),
         reason,
@@ -156,22 +163,34 @@ export default class WebsiteResolver {
     logger.debug('Deleting website...')
     await notify(WebsiteGenerationStatus.PROCESSING, WebsiteGenerationStep.CLEAN)
 
-    return builder.clean(website).then(async (): Promise<WebsiteInstance> => {
-      await website.remove()
+    return builder
+      .clean(website)
+      .then(
+        async (): Promise<WebsiteInstance> => {
+          await website.remove()
 
-      // Notify subscriber for delete website
-      const times = (Date.now() - start.getTime()) / 1000
-      logger.debug(`Website as been deleted, in ${times}s`)
-      await notify(WebsiteGenerationStatus.SUCCESS, WebsiteGenerationStep.IDLE, undefined, new Date())
+          // Notify subscriber for delete website
+          const times = (Date.now() - start.getTime()) / 1000
+          logger.debug(`Website as been deleted, in ${times}s`)
+          await notify(WebsiteGenerationStatus.SUCCESS, WebsiteGenerationStep.IDLE, undefined, new Date())
 
-      return website
-    }).catch(async (err: Error): Promise<WebsiteInstance> => {
-      // Notify subscriber for update website
-      logger.debug(`Website could not be deleted`)
-      await notify(WebsiteGenerationStatus.FAIL, WebsiteGenerationStep.CLEAN, `deleting website (err: ${err.message})`, new Date())
+          return website
+        }
+      )
+      .catch(
+        async (err: Error): Promise<WebsiteInstance> => {
+          // Notify subscriber for update website
+          logger.debug('Website could not be deleted')
+          await notify(
+            WebsiteGenerationStatus.FAIL,
+            WebsiteGenerationStep.CLEAN,
+            `deleting website (err: ${err.message})`,
+            new Date()
+          )
 
-      throw err
-    })
+          throw err
+        }
+      )
   }
 
   /**
@@ -185,7 +204,8 @@ export default class WebsiteResolver {
   public async buildWebsite (
     @TypeGQL.Arg('id') id: ObjectId,
       @TypeGQL.Arg('reason', { defaultValue: 'force' }) reason: string = 'force',
-      @TypeGQL.PubSub(PubSubConstants.WEBSITE_GENERATION) publish: TypeGQL.Publisher<WebsiteGenerationPayload>
+    @TypeGQL.PubSub(PubSubConstants.WEBSITE_GENERATION)
+      publish: TypeGQL.Publisher<WebsiteGenerationPayload>
   ): Promise<WebsiteInstance> {
     const website = await WebsiteDB.findById(id)
     const logger = global.loggers.graphql.child({
@@ -195,7 +215,12 @@ export default class WebsiteResolver {
       }
     })
     const start = new Date()
-    const notify = (status: WebsiteGenerationStatus, step?: WebsiteGenerationStep, reason: string = 'building website', endDate?: Date): Promise<void> => {
+    const notify = (
+      status: WebsiteGenerationStatus,
+      step?: WebsiteGenerationStep,
+      reason = 'building website',
+      endDate?: Date
+    ): Promise<void> => {
       return publish({
         id: id.toHexString(),
         reason,
@@ -216,23 +241,32 @@ export default class WebsiteResolver {
 
     let step: WebsiteGenerationStep
     try {
-    // Build website
+      // Build website
       await notify(WebsiteGenerationStatus.PROCESSING, WebsiteGenerationStep.BUILD)
-      await builder.build(website, template).catch((err): Promise<void> => {
-        step = WebsiteGenerationStep.BUILD
-        throw err
-      })
+      await builder.build(website, template).catch(
+        (err): Promise<void> => {
+          step = WebsiteGenerationStep.BUILD
+          throw err
+        }
+      )
 
       // Upload website
       await notify(WebsiteGenerationStatus.PROCESSING, WebsiteGenerationStep.UPLOAD)
-      await builder.upload(website, template.build.directory).catch((err): Promise<void> => {
-        step = WebsiteGenerationStep.UPLOAD
-        throw err
-      })
+      await builder.upload(website, template.build.directory).catch(
+        (err): Promise<void> => {
+          step = WebsiteGenerationStep.UPLOAD
+          throw err
+        }
+      )
     } catch (err) {
       // Notify subscriber for new website
-      logger.debug(`Website could not be builded and uploaded`)
-      await notify(WebsiteGenerationStatus.FAIL, step, `building and uploading (from: ${reason}) website (err: ${err.message})`, new Date())
+      logger.debug('Website could not be builded and uploaded')
+      await notify(
+        WebsiteGenerationStatus.FAIL,
+        step,
+        `building and uploading (from: ${reason}) website (err: ${err.message})`,
+        new Date()
+      )
 
       throw err
     }
@@ -256,7 +290,7 @@ export default class WebsiteResolver {
    */
   @TypeGQL.Subscription({
     topics: PubSubConstants.WEBSITE_GENERATION,
-    filter ({ payload, args }: TypeGQL.ResolverFilterData<WebsiteGenerationPayload, {ids: string[]}>): boolean {
+    filter ({ payload, args }: TypeGQL.ResolverFilterData<WebsiteGenerationPayload, { ids: string[] }>): boolean {
       if (args.ids.length === 1 && isEditorKey(args.ids[0])) {
         return true
       }
@@ -271,7 +305,7 @@ export default class WebsiteResolver {
     }
   })
   public websitesGeneration (
-    @TypeGQL.Arg('ids', (): ReturnTypeFuncValue => [String]) ids: string[],
+    @TypeGQL.Arg('ids', (): ReturnTypeFuncValue => [String]) _ids: string[],
     @TypeGQL.Root() payload: WebsiteGenerationPayload
   ): WebsiteGeneration {
     const logger = global.loggers.builder.child({
@@ -280,10 +314,7 @@ export default class WebsiteResolver {
       }
     })
 
-    logger.debug(
-      payload,
-      `Subscription ${PubSubConstants.WEBSITE_GENERATION} : `
-    )
+    logger.debug(payload, `Subscription ${PubSubConstants.WEBSITE_GENERATION} : `)
 
     return payload
   }
@@ -301,7 +332,7 @@ export default class WebsiteResolver {
   @TypeGQL.FieldResolver((): ReturnTypeFuncValue => User)
   public users (
     @TypeGQL.Args() { offset, limit }: PaginationArgs,
-      @TypeGQL.Root() website: WebsiteInstance
+    @TypeGQL.Root() website: WebsiteInstance
   ): DocumentQuery<UserInstance[], Document> {
     const options: any = { sort: { createdAt: 1 } }
     if (offset) {

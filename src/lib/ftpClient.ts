@@ -17,7 +17,7 @@ export interface FTPClientOptions {
 
 export default class FTPClient {
   private readonly options: FTPClientOptions
-  private connected: boolean;
+  private connected: boolean
   private client: SFTPClient | _FTPClient
 
   public constructor (options?: FTPClientOptions) {
@@ -42,24 +42,26 @@ export default class FTPClient {
     if (this.options.sftp) {
       this.client = new SFTPClient()
 
-      await this.client.connect({
-        host: this.options.host,
-        port: this.options.port,
-        username: this.options.user,
-        password: this.options.password
-        /* debug (info): void {
+      await this.client
+        .connect({
+          host: this.options.host,
+          port: this.options.port,
+          username: this.options.user,
+          password: this.options.password
+          /* debug (info): void {
           console.log(info)
         } */
-      }).then((): void => {
-        this.connected = true
-      })
+        })
+        .then((): void => {
+          this.connected = true
+        })
     } else {
-      const ftp = this.client = new _FTPClient({
+      const ftp = (this.client = new _FTPClient({
         host: this.options.host,
         port: this.options.port,
         user: this.options.user,
         pass: this.options.password
-      })
+      }))
 
       return new Promise((resolve, reject): void => {
         ftp.once('connect', (): void => {
@@ -84,9 +86,11 @@ export default class FTPClient {
     this.checkConnection()
 
     if (this.options.sftp) {
-      await this.getClient<SFTPClient>().end().then((): void => {
-        this.connected = false
-      })
+      await this.getClient<SFTPClient>()
+        .end()
+        .then((): void => {
+          this.connected = false
+        })
     } else {
       try {
         this.getClient<_FTPClient>().destroy()
@@ -104,13 +108,13 @@ export default class FTPClient {
    * @param remotePath remote directory path.
    * @param recursive if true, recursively create directories
    */
-  public mkdir (remotePath: string, recursive: boolean = false): Promise<void> {
+  public mkdir (remotePath: string, recursive = false): Promise<string> {
     this.checkConnection()
 
-    const doMkdir = async (path: string): Promise<void> => {
+    const doMkdir = async (path: string): Promise<string> => {
       const exist = await this.exists(path)
       if (exist) {
-        return Promise.resolve()
+        return Promise.resolve(null)
       }
 
       if (this.options.sftp) {
@@ -131,7 +135,7 @@ export default class FTPClient {
     if (!recursive) {
       return doMkdir(remotePath)
     }
-    const mkdir = async (path: string): Promise<void> => {
+    const mkdir = async (path: string): Promise<string> => {
       const { dir } = Path.parse(path)
       const exist = await this.exists(dir)
       if (!exist) {
@@ -157,13 +161,15 @@ export default class FTPClient {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return this.getClient<SFTPClient>().fastPut(localPath, remotePath) as any
     } else {
-      return new Promise(async (resolve, reject): Promise<void> => {
-        this.getClient<_FTPClient>().put(await readFile(localPath), remotePath, (err): void => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve()
-          }
+      return readFile(localPath).then((file) => {
+        return new Promise((resolve, reject): void => {
+          this.getClient<_FTPClient>().put(file, remotePath, (err): void => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve()
+            }
+          })
         })
       })
     }
@@ -194,9 +200,7 @@ export default class FTPClient {
             if (err.code === 2) {
               resolve(false)
             } else {
-              reject(
-                new Error(`Error listing ${dir}: code: ${err.code} ${err.message}`)
-              )
+              reject(new Error(`Error listing ${dir}: code: ${err.code} ${err.message}`))
             }
           } else {
             resolve(list.filter((item): boolean => item.name === base).length > 0)

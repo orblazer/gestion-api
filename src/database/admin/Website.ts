@@ -1,9 +1,9 @@
 import { Typegoose, prop, arrayProp, Ref, InstanceType } from 'typegoose'
 import mongoose from 'mongoose'
 import isURL from 'validator/lib/isURL'
-import { FieldValue } from '@/graphql/resolvers/scalars/FieldValue'
 import { User } from './User'
 import { WebsiteTemplate, WebsiteTemplateModule } from './WebsiteTemplate'
+import { FieldValue } from '@/graphql/resolvers/scalars/FieldValue'
 
 export interface Field {
   name: string;
@@ -12,7 +12,7 @@ export interface Field {
 
 export enum WebsiteFTPProtocol {
   FTP = 'FTP',
-  SFTP = 'SFTP'
+  SFTP = 'SFTP',
 }
 
 export interface WebsiteFTP {

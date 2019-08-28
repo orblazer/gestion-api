@@ -3,38 +3,24 @@ module.exports = {
   env: {
     node: true
   },
-  parser: '@typescript-eslint/parser',
   parserOptions: {
-    project: './tsconfig.json'
+    parser: '@typescript-eslint/parser'
   },
-  extends: [
-    'standard',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:import/errors',
-    'plugin:import/warnings',
-    'plugin:import/recommended',
-    'plugin:import/typescript'
-  ],
-  plugins: ['@typescript-eslint', 'standard'],
+  extends: ['standard', 'plugin:import/errors', 'plugin:import/warnings', 'plugin:@typescript-eslint/recommended'],
+  plugins: ['unicorn', 'standard', '@typescript-eslint'],
+  settings: {
+    'import/resolver': {
+      node: { extensions: ['.js', '.mjs'] }
+    }
+  },
   rules: {
-    '@typescript-eslint/indent': [
-      'error',
-      2,
-      {
-        SwitchCase: 1,
-        VariableDeclarator: 1,
-        outerIIFEBody: 1,
-        MemberExpression: 1,
-        FunctionDeclaration: { parameters: 1, body: 1 },
-        FunctionExpression: { parameters: 1, body: 1 },
-        CallExpression: { arguments: 1 },
-        ArrayExpression: 1,
-        ObjectExpression: 1,
-        ImportDeclaration: 1,
-        flatTernaryExpressions: false,
-        ignoreComments: false
-      }
-    ],
+    /**********************/
+    /* General Code Rules */
+    /**********************/
+
+    '@typescript-eslint/no-unused-vars': ['error', { args: 'all', argsIgnorePattern: '^_' }],
+
+    '@typescript-eslint/no-inferrable-types': 'off',
 
     // Enforce import order
     'import/order': 'error',
@@ -55,18 +41,15 @@ module.exports = {
     'generator-star-spacing': 'off',
 
     // Allow debugger during development
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
-    'no-console': [
-      process.env.NODE_ENV === 'production' ? 'error' : 'warn',
-      { allow: ['warn', 'error'] }
-    ],
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
+    'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
 
     // Prefer const over let
     'prefer-const': [
       'error',
       {
         destructuring: 'any',
-        ignoreReadBeforeAssign: false
+        ignoreReadBeforeAssign: false,
       }
     ],
 
@@ -89,6 +72,46 @@ module.exports = {
     'object-shorthand': 'error',
 
     // No useless destructuring/importing/exporting renames
-    'no-useless-rename': 'error'
+    'no-useless-rename': 'error',
+
+    /**********************/
+    /*   Unicorn Rules    */
+    /**********************/
+
+    // Pass error message when throwing errors
+    'unicorn/error-message': 'error',
+
+    // Uppercase regex escapes
+    'unicorn/escape-case': 'error',
+
+    // Array.isArray instead of instanceof
+    'unicorn/no-array-instanceof': 'error',
+
+    // Prevent deprecated `new Buffer()`
+    'unicorn/no-new-buffer': 'error',
+
+    // Keep regex literals safe!
+    'unicorn/no-unsafe-regex': 'off',
+
+    // Lowercase number formatting for octal, hex, binary (0x12 instead of 0X12)
+    'unicorn/number-literal-case': 'error',
+
+    // ** instead of Math.pow()
+    'unicorn/prefer-exponentiation-operator': 'error',
+
+    // includes over indexOf when checking for existence
+    'unicorn/prefer-includes': 'error',
+
+    // String methods startsWith/endsWith instead of more complicated stuff
+    'unicorn/prefer-starts-ends-with': 'error',
+
+    // textContent instead of innerText
+    'unicorn/prefer-text-content': 'error',
+
+    // Enforce throwing type error when throwing error while checking typeof
+    'unicorn/prefer-type-error': 'error',
+
+    // Use new when throwing error
+    'unicorn/throw-new-error': 'error'
   }
 }

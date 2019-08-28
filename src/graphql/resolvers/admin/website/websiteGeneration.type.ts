@@ -15,14 +15,14 @@ export enum WebsiteGenerationStatus {
   IDLE,
   PROCESSING,
   FAIL,
-  SUCCESS
+  SUCCESS,
 }
 
 export enum WebsiteGenerationStep {
   IDLE,
   BUILD,
   UPLOAD,
-  CLEAN
+  CLEAN,
 }
 
 TypeGQL.registerEnumType(WebsiteGenerationStatus, {

@@ -4,20 +4,14 @@ import { execFile } from 'child_process'
 import { extract } from 'tar'
 import fs from 'fs-extra'
 import { mergeDeep } from 'apollo-utilities'
-import {
-  Instance as WebsiteTemplate,
-  WebsiteTemplatePackager
-} from '../database/admin/WebsiteTemplate'
+import { Instance as WebsiteTemplate, WebsiteTemplatePackager } from '../database/admin/WebsiteTemplate'
 import { Instance as Website, WebsiteFTPProtocol } from '../database/admin/Website'
 import { walk, normalize } from '../lib/directory'
 import FTPClient from './ftpClient'
 
 const exec = util.promisify(execFile)
 
-async function build (
-  website: Website,
-  template: null | WebsiteTemplate = null
-): Promise<void> {
+async function build (website: Website, template: null | WebsiteTemplate = null): Promise<void> {
   const logger = global.loggers.builder.child({
     website: {
       id: website._id,
@@ -30,11 +24,7 @@ async function build (
   const folderExist = await fs.pathExists(path)
 
   logger.debug(
-    `Building website ` +
-      (template !== null
-        ? `with template ${template.name}`
-        : 'without template') +
-      '...'
+    'Building website ' + (template !== null ? `with template ${template.name}` : 'without template') + '...'
   )
 
   // Create directory (if not exist)
@@ -68,12 +58,10 @@ async function build (
       env: mergeDeep({}, process.env, {
         WEBSITE: JSON.stringify(website)
       })
-    }).catch(
-      (err): void => {
-        logger.error(`Website building failed, ${err}`)
-        throw err
-      }
-    )
+    }).catch((err): void => {
+      logger.error(`Website building failed, ${err}`)
+      throw err
+    })
 
     if (proc) {
       logger.debug(proc.stdout)
@@ -95,14 +83,12 @@ async function upload (website: Website, uploadFolder: string): Promise<void> {
   })
   const start = Date.now()
   const folder = Path.resolve(website.directory + '/' + uploadFolder)
-  const files = (await walk(folder)).map(
-    (file): { local: string; remote: string } => {
-      return {
-        local: file,
-        remote: normalize(website.ftp.directory + file.replace(folder, '.'))
-      }
+  const files = (await walk(folder)).map((file): { local: string; remote: string } => {
+    return {
+      local: file,
+      remote: normalize(website.ftp.directory + file.replace(folder, '.'))
     }
-  )
+  })
 
   logger.debug('Uploading website...')
 
@@ -120,9 +106,7 @@ async function upload (website: Website, uploadFolder: string): Promise<void> {
     for (const file of files) {
       const { dir } = Path.posix.parse(file.remote)
 
-      await client
-        .mkdir(dir, true)
-        .then((): Promise<void> => client.put(file.local, file.remote))
+      await client.mkdir(dir, true).then((): Promise<void> => client.put(file.local, file.remote))
     }
 
     await client.close()

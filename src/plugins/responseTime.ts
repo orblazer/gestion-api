@@ -4,11 +4,7 @@ import fastifyPlugin from 'fastify-plugin'
 const symbolRequestTime = Symbol('RequestTimer')
 const symbolServerTiming = Symbol('ServerTiming')
 
-function genTick (
-  name: string,
-  duration?: number | string,
-  description?: string
-): string {
+function genTick (name: string, duration?: number | string, description?: string): string {
   let val = name
   // Parse duration. If could not be converted to float, does not add it
   if (typeof duration === 'string') {
@@ -19,9 +15,7 @@ function genTick (
   }
   // Parse the description. If empty, doest not add it. If string with space, double quote value
   if (typeof description === 'string') {
-    val += `;desc=${
-      description.includes(' ') ? `"${description}"` : description
-    }`
+    val += `;desc=${description.includes(' ') ? `"${description}"` : description}`
   }
 
   return val
@@ -32,11 +26,7 @@ export interface ResponseTimeOptions {
   header?: string;
 }
 
-export default fastifyPlugin(function (
-  fastify,
-  opts: ResponseTimeOptions,
-  next
-): void {
+export default fastifyPlugin(function (fastify, opts: ResponseTimeOptions, next): void {
   // Check the options, and corrects with the default values if inadequate
   if (isNaN(opts.digits) || opts.digits < 0) {
     opts.digits = 2
@@ -52,7 +42,7 @@ export default fastifyPlugin(function (
     // Reference to the res object storing values …
     const serverTiming = this.res[symbolServerTiming]
     // … return if value already exists (all subsequent occurrences MUST be ignored without signaling an error) …
-    if (serverTiming.hasOwnProperty(name)) {
+    if (Object.prototype.hasOwnProperty.call(serverTiming, name)) {
       return false
     }
     // … add the value the the list to send later
@@ -78,12 +68,7 @@ export default fastifyPlugin(function (
   })
 
   // Hook to be triggered just before response to be send
-  fastify.addHook('onSend', function (
-    request: any,
-    reply: any,
-    payload,
-    next
-  ): void {
+  fastify.addHook('onSend', function (request: any, reply: any, _payload, next): void {
     // check if Server-Timing need to be added
     const serverTiming = reply.res[symbolServerTiming]
     const headers = []
@@ -97,9 +82,7 @@ export default fastifyPlugin(function (
     // Calculate the duration, in nanoseconds …
     const hrDuration = process.hrtime(request.req[symbolRequestTime])
     // … convert it to milliseconds …
-    const duration = (hrDuration[0] * 1e3 + hrDuration[1] / 1e6).toFixed(
-      opts.digits
-    )
+    const duration = (hrDuration[0] * 1e3 + hrDuration[1] / 1e6).toFixed(opts.digits)
     // … add the header to the response
     reply.header(opts.header, duration)
 

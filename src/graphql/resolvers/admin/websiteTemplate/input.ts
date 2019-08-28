@@ -3,10 +3,10 @@ import * as TypeGQL from 'type-graphql'
 import { GraphQLUpload } from 'graphql-upload'
 import { GraphQLScalarType } from 'graphql'
 import { ReturnTypeFuncValue } from 'type-graphql/dist/decorators/types'
-import { WebsiteTemplateModule } from '@/database/admin/WebsiteTemplate'
 import { Lang } from '../../textLocalized'
 import WebsiteTemplateFieldInput from './websiteTemplateField.input'
 import WebsiteTemplateBuildInput from './websiteTemplateBuild.input'
+import { WebsiteTemplateModule } from '@/database/admin/WebsiteTemplate'
 
 @TypeGQL.InputType()
 export default class WebsiteTemplateInput {

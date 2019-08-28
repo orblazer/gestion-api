@@ -4,24 +4,24 @@ import uploadFile, { UploadFileOptions, UploadFileResult } from './uploadFile'
 
 export interface UploadImageOptions extends UploadFileOptions {
   image?:
-  | false
-  | {
-    width: number;
-    height?: number;
-    quality?: number;
-  };
+    | false
+    | {
+        width: number;
+        height?: number;
+        quality?: number;
+      };
   thumbnail?:
-  | false
-  | {
-    width: number;
-    height?: number;
-    quality?: number;
-  };
+    | false
+    | {
+        width: number;
+        height?: number;
+        quality?: number;
+      };
   preview?:
-  | false
-  | {
-    width: number;
-  };
+    | false
+    | {
+        width: number;
+      };
 }
 export interface UploadImageResult extends UploadFileResult {
   thumbnail?: string;
@@ -51,14 +51,8 @@ export default async function uploadImage (
 
   // Get thumbnail and preview paths
   const extension = Path.extname(uploadedFile.fullPath)
-  const thumbnailPath = uploadedFile.fullPath.replace(
-    extension,
-    '-thumbnail' + extension
-  )
-  const previewPath = uploadedFile.fullPath.replace(
-    extension,
-    '-preview' + extension
-  )
+  const thumbnailPath = uploadedFile.fullPath.replace(extension, '-thumbnail' + extension)
+  const previewPath = uploadedFile.fullPath.replace(extension, '-preview' + extension)
 
   // Modify image with specific options
   if (options.image) {
