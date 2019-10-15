@@ -9,12 +9,14 @@ import { UploadImageResult } from '@/lib/uploadImage'
 
 export interface InputFields {
   type: string;
-  localize?: Lang;
+  localization?: Lang[];
   name: string;
   label: string;
   errorName?: string;
   placeholder?: string;
-  defaultValue?: FieldValue;
+  defaultValue?: {
+    [lang: string]: FieldValue;
+  };
   validate?: JSONType;
   options?: { name: string; value: string }[];
   private?: boolean;
@@ -25,12 +27,12 @@ export enum WebsiteTemplateModule {
   BLOG_CATEGORIES = 'BLOG_CATEGORIES',
   SERVICES = 'SERVICES',
   VTC_VEHICLES = 'VTC_VEHICLES',
-  REST_MENU = 'REST_MENU',
+  REST_MENU = 'REST_MENU'
 }
 
 export enum WebsiteTemplatePackager {
   YARN = 'YARN',
-  NPM = 'NPM',
+  NPM = 'NPM'
 }
 
 export interface WebsiteTemplateBuild {
